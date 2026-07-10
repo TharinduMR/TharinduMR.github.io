@@ -195,7 +195,7 @@ h4 {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 8rem 1rem 0 1rem;
+    padding: 6rem 1rem 0 1rem;
     position: relative;
     overflow: hidden;
 }
@@ -247,7 +247,7 @@ h4 {
     font-style: italic;
     font-size: clamp(3rem, 5vw, 6rem);
     line-height: 1.1;
-    margin-bottom: 1rem;
+    margin-bottom: 0.5rem;
     color: #ffffff;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
 }
@@ -256,7 +256,7 @@ h4 {
     font-size: 2rem;
     color: #ffffff;
     font-weight: 500;
-    margin-bottom: 1.5rem;
+    margin-bottom: 1rem;
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
@@ -264,7 +264,7 @@ h4 {
     font-size: 1.1rem;
     color: #f8fafc;
     line-height: 1.7;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     max-width: 600px;
     margin-left: auto;
     margin-right: auto;
@@ -272,14 +272,14 @@ h4 {
 }
 
 .hero-skills-carousel {
-    margin-top: 3.5rem;
+    margin-top: 1.5rem;
     width: 100%;
     max-width: 800px;
     margin-left: auto;
     margin-right: auto;
     overflow: hidden;
     position: relative;
-    padding: 2rem 0;
+    padding: 1rem 0;
     /* Fades the left and right edges so bubbles appear and disappear smoothly */
     -webkit-mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
     mask-image: linear-gradient(to right, transparent, black 15%, black 85%, transparent);
@@ -1098,8 +1098,8 @@ footer {
 
     /* Hero */
     .hero {
-        padding-top: 6.5rem;
-        padding-bottom: 3rem;
+        padding-top: 5rem;
+        padding-bottom: 1.5rem;
         text-align: center;
     }
 
