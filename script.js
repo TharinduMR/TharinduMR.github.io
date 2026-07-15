@@ -243,12 +243,12 @@ if (track) {
 
     function animateCarousel() {
         scrollPos -= speed;
-        
+
         // If we've scrolled half the width (the original items), reset to 0
         if (Math.abs(scrollPos) >= track.scrollWidth / 2) {
             scrollPos = 0;
         }
-        
+
         track.style.transform = `translateX(${scrollPos}px)`;
 
         // Highlight center element
@@ -281,3 +281,124 @@ if (track) {
     // Start animation
     animateCarousel();
 }
+
+$(document).ready(function () {
+    // Initialize WOW
+    new WOW({
+        boxClass: 'wow',
+        animateClass: 'animated',
+        offset: 0,
+        mobile: true,
+        live: true
+    }).init();
+
+    // Initialize Swiper for Projects
+    if (document.querySelector('.project-swiper')) {
+        const projectSwiper = new Swiper('.project-swiper', {
+            slidesPerView: 1,
+            spaceBetween: 30,
+            loop: true,
+            autoplay: {
+                delay: 0,
+                disableOnInteraction: false,
+            },
+            speed: 8000,
+            freeMode: true,
+            breakpoints: {
+                768: {
+                    slidesPerView: 2,
+                },
+                1024: {
+                    slidesPerView: 3,
+                }
+            }
+        });
+
+        // Add class for continuous linear transition style
+        projectSwiper.el.classList.add('continuous');
+
+        const prevBtn = document.querySelector('.swiper-button-prev');
+        const nextBtn = document.querySelector('.swiper-button-next');
+        const pauseBtn = document.getElementById('project-pause-btn');
+        let isPaused = false;
+
+        function pauseSwiper() {
+            projectSwiper.autoplay.stop();
+            projectSwiper.el.classList.remove('continuous');
+            if (pauseBtn) pauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+            isPaused = true;
+        }
+
+        function playSwiper() {
+            projectSwiper.el.classList.add('continuous');
+            projectSwiper.autoplay.start();
+            if (pauseBtn) pauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+            isPaused = false;
+        }
+
+        if (pauseBtn) {
+            pauseBtn.addEventListener('click', () => {
+                if (isPaused) {
+                    playSwiper();
+                } else {
+                    pauseSwiper();
+                }
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                pauseSwiper();
+                projectSwiper.params.freeMode = false;
+                projectSwiper.slideNext(800);
+                setTimeout(() => {
+                    projectSwiper.params.freeMode = true;
+                }, 800);
+            });
+        }
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                pauseSwiper();
+                projectSwiper.params.freeMode = false;
+                projectSwiper.slidePrev(800);
+                setTimeout(() => {
+                    projectSwiper.params.freeMode = true;
+                }, 800);
+            });
+        }
+    }
+});
+
+// Initialize Parallaxie
+$(function () {
+    if ($('.parallaxie').length) {
+        $('.parallaxie').parallaxie({
+            speed: 0.5,
+            offset: 50,
+        });
+    }
+
+    // Initialize Magnific Popup for images
+    if ($('.popup-image').length) {
+        $('.popup-image').magnificPopup({
+            type: 'image',
+            gallery: { enabled: true }
+        });
+    }
+
+    // Initialize Magnific Popup for videos
+    if ($('.popup-video').length) {
+        $('.popup-video').magnificPopup({
+            type: 'iframe',
+            mainClass: 'mfp-fade',
+            removalDelay: 160,
+            preloader: false,
+            fixedContentPos: true
+        });
+    }
+});

@@ -2,11 +2,21 @@
 <html lang="en">
 
 <head>
+<script>
+window.onerror = function(message, source, lineno, colno, error) {
+    fetch('http://localhost:8001/log_error', { method: 'POST', body: message + ' at line ' + lineno + ' in ' + source });
+};
+</script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tharindu Madhusanka | Engineering Portfolio</title>
     <meta name="description" content="Portfolio of Tharindu Madhusanka Rajapakshe, Mechanical & Energy Engineer.">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="css/mousecursor.css?v=2">
+    <link rel="stylesheet" href="css/magnific-popup.css">
+    <link rel="stylesheet" href="css/animate.css">
+    <link rel="stylesheet" href="css/swiper-bundle.min.css">
+    <link rel="stylesheet" href="style.css?v=3">
     <link rel="stylesheet" href="liquid-glass.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,9 +24,10 @@
         href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;800&display=swap"
         rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="css/animate.css">
 </head>
 
-<body>
+<body class="cursor-main">
     <a href="#home" class="brand-logo" aria-label="TMR Home">
         <img src="logo.png" alt="TMR Logo" class="brand-logo__img">
         <span class="brand-logo__text">TMR.</span>
@@ -24,7 +35,7 @@
     <!-- Floating Dock Navigation -->
     <div class="floating-dock">
         <nav class="floating-dock__nav" aria-label="Main navigation">
-            <a href="#home" title="Home" class="dock-btn">
+            <a href="#home" title="Home" class="dock-btn active" id="dock-btn-home" data-cursor-stick="#dock-btn-home">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"></path>
@@ -32,7 +43,7 @@
                 </svg>
             </a>
 
-            <a href="#about" title="About" class="dock-btn">
+            <a href="#about" title="About" class="dock-btn" id="dock-btn-about" data-cursor-stick="#dock-btn-about">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -40,7 +51,7 @@
                 </svg>
             </a>
 
-            <a href="#experience" title="Experience" class="dock-btn">
+            <a href="#experience" title="Experience" class="dock-btn" id="dock-btn-experience" data-cursor-stick="#dock-btn-experience">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                     stroke-linecap="round" stroke-linejoin="round">
                     <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
@@ -48,7 +59,7 @@
                 </svg>
             </a>
 
-            <a href="#projects" title="Projects" class="dock-btn">
+            <a href="#projects" title="Projects" class="dock-btn" id="dock-btn-projects" data-cursor-stick="#dock-btn-projects">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                     stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="3" width="7" height="7" rx="1"></rect>
@@ -60,14 +71,14 @@
 
             <span class="dock-divider" aria-hidden="true"></span>
 
-            <a href="#skills" title="Skills" class="dock-btn">
+            <a href="#skills" title="Skills" class="dock-btn" id="dock-btn-skills" data-cursor-stick="#dock-btn-skills">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                     stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
                 </svg>
             </a>
 
-            <a href="#contact" title="Contact" class="dock-btn">
+            <a href="#contact" title="Contact" class="dock-btn" id="dock-btn-contact" data-cursor-stick="#dock-btn-contact">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
@@ -78,7 +89,7 @@
             <span class="dock-divider" aria-hidden="true"></span>
 
             <a href="https://github.com/TharinduMR" target="_blank" rel="noopener noreferrer" title="GitHub"
-                class="dock-btn">
+                class="dock-btn" id="dock-btn-github" data-cursor-stick="#dock-btn-github">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                     <path
                         d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0 0 22 12.017C22 6.484 17.522 2 12 2z">
@@ -89,11 +100,11 @@
     </div>
 
     <header class="hero" id="home">
-        <div class="hero-bg-image"></div>
+        <div class="hero-bg-image parallaxie"></div>
         <div class="hero-content fade-in-up">
-            <h2 class="greeting">Hello, I'm</h2>
-            <h1 class="name">Tharindu Madhusanka Rajapakshe</h1>
-            <h3 class="title">Mechanical & Energy Systems Engineer</h3>
+            <h2 class="greeting" data-cursor="-opaque">Hello, I'm</h2>
+            <h1 class="name" data-cursor="-opaque">Tharindu Madhusanka Rajapakshe</h1>
+            <h3 class="title" data-cursor="-opaque">Mechanical & Energy Systems Engineer</h3>
             <p class="summary">A dedicated engineer with a passion for Product development, innovation, and sustainable
                 energy systems. Driven to explore machine design, thermodynamics, mechatronics, fluid mechanics, and
                 advanced engineering challenges.</p>
@@ -127,8 +138,8 @@
     </header>
 
     <section id="about" class="section">
-        <div class="container reveal">
-            <h2 class="section-title">About Me</h2>
+        <div class="container wow fadeInUp">
+            <h2 class="section-title" data-cursor="-opaque">About Me</h2>
 
             <!-- Tagline -->
             <p class="about-tagline">From core engineering to cutting-edge code — bridging the physical and digital
@@ -222,7 +233,7 @@
                     </div>
                     <!-- Education Card -->
                     <div class="education-card">
-                        <h3><i class="fa-solid fa-graduation-cap"></i> BSc(Hons) - Mechanical Engineering</h3>
+                        <h3 data-cursor="-opaque"><i class="fa-solid fa-graduation-cap"></i> BSc(Hons) - Mechanical Engineering</h3>
                         <p class="uni">University of Peradeniya (Specialized in Energy Systems)</p>
                         <p class="date">June 2021 - Aug 2025</p>
                         <ul class="coursework">
@@ -240,7 +251,7 @@
 
                     <!-- What Drives Me -->
                     <div class="about-drives">
-                        <h3><i class="fa-solid fa-heart-pulse"></i> What Drives Me</h3>
+                        <h3 data-cursor="-opaque"><i class="fa-solid fa-heart-pulse"></i> What Drives Me</h3>
                         <p>I believe the future of engineering lies at the intersection of mechanical systems and
                             digital intelligence. Whether it's designing efficient energy systems, building modern
                             web platforms, writing intelligent automation scripts, or applying AI to solve complex
@@ -257,8 +268,8 @@
     </section>
 
     <section id="experience" class="section alt-bg">
-        <div class="container reveal">
-            <h2 class="section-title">Professional Experience</h2>
+        <div class="container wow fadeInUp">
+            <h2 class="section-title" data-cursor="-opaque">Professional Experience</h2>
             <div class="timeline">
                 <div class="timeline-item">
                     <div class="timeline-dot"></div>
@@ -266,7 +277,7 @@
                         <div class="timeline-inner">
                             <div class="timeline-details">
                                 <span class="date">Dec 2025 - Present</span>
-                                <h3>MEP Engineer</h3>
+                                <h3 data-cursor="-opaque">MEP Engineer</h3>
                                 <h4>Building Services Engineering Consultants (pvt) Ltd.</h4>
                                 <div class="exp-skills">
                                     <span class="glass-tag">MEP System Design</span>
@@ -291,7 +302,7 @@
                         <div class="timeline-inner">
                             <div class="timeline-details">
                                 <span class="date">Jul 2024 - Sept 2024</span>
-                                <h3>Mechanical Engineering Trainee - Intern</h3>
+                                <h3 data-cursor="-opaque">Mechanical Engineering Trainee - Intern</h3>
                                 <h4>LTL Holdings, Sobadhanavi 350MW LNG Combined Cycle Power Plant</h4>
                                 <div class="exp-skills">
                                     <span class="glass-tag">LNG Power Generation</span>
@@ -314,7 +325,7 @@
                         <div class="timeline-inner">
                             <div class="timeline-details">
                                 <span class="date">Aug 2023 - Oct 2023</span>
-                                <h3>Mechanical Engineering Trainee - Intern</h3>
+                                <h3 data-cursor="-opaque">Mechanical Engineering Trainee - Intern</h3>
                                 <h4>Mahaweli Authority, Victoria Dam</h4>
                                 <div class="exp-skills">
                                     <span class="glass-tag">Hydroelectric Systems</span>
@@ -336,13 +347,15 @@
     </section>
 
     <section id="projects" class="section">
-        <div class="container reveal">
-            <h2 class="section-title">Featured Projects</h2>
-            <div class="project-grid">
+        <div class="container wow fadeInUp">
+            <h2 class="section-title" data-cursor="-opaque">Featured Projects</h2>
+            <div class="swiper project-swiper" style="padding-bottom: 40px;"><div class="swiper-wrapper">
+                <div class="swiper-slide" data-cursor-text="Drag">
                 <div class="project-card glass-card">
                     <div class="project-header">
                         <div class="project-icon"><i class="fa-solid fa-wind"></i></div>
-                        <h3>Low Velocity Wind Energy Harvesting</h3>
+                        <h3 data-cursor="-opaque">Low Velocity Wind Energy Harvesting</h3>
+                        <a href="javascript:void(0)" onclick="openModal('wind')" class="card-link-icon" data-cursor-text="Open"><i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                     <p class="tag">Final Year Project - 2025</p>
                     <p>Designed a vibration-based, dual-body (NACA 0012 & Cylinder) energy harvesting system for
@@ -357,14 +370,16 @@
                         <img src="wind1.png" alt="Preview 1">
                         <img src="wind2.png" alt="Preview 2">
                     </div>
-                    <button class="btn secondary" style="margin-top: 1.5rem; padding: 0.5rem 1.5rem; font-size: 0.9rem;"
-                        onclick="openModal('wind')">More Info</button>
+                    
+                </div>
                 </div>
 
+                <div class="swiper-slide" data-cursor-text="Drag">
                 <div class="project-card glass-card">
                     <div class="project-header">
                         <div class="project-icon"><i class="fa-solid fa-water"></i></div>
-                        <h3>Design and CFD Analysis of Air & Dirt Separator</h3>
+                        <h3 data-cursor="-opaque">Design and CFD Analysis of Air & Dirt Separator</h3>
+                        <a href="javascript:void(0)" onclick="openModal('cfd')" class="card-link-icon" data-cursor-text="Open"><i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                     <p class="tag">Engineering Design Package</p>
                     <p>Design and Conducted comprehensive multiphase CFD simulations to quantify pressure drop and
@@ -379,14 +394,16 @@
                         <img src="cfd1.png" alt="Velocity Contours">
                         <img src="cfd2.png" alt="Streamlines">
                     </div>
-                    <button class="btn secondary" style="margin-top: 1.5rem; padding: 0.5rem 1.5rem; font-size: 0.9rem;"
-                        onclick="openModal('separator')">More Info</button>
+                    
+                </div>
                 </div>
 
+                <div class="swiper-slide" data-cursor-text="Drag">
                 <div class="project-card glass-card">
                     <div class="project-header">
                         <div class="project-icon"><i class="fa-solid fa-heart-pulse"></i></div>
-                        <h3>Measuring ECG via Defibrillator</h3>
+                        <h3 data-cursor="-opaque">Measuring ECG via Defibrillator</h3>
+                        <a href="javascript:void(0)" onclick="openModal('ecg')" class="card-link-icon" data-cursor-text="Open"><i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                     <p class="tag">Mini Project - 2025</p>
                     <p>Engineered a system to accurately measure ECG signals using high-impedance defibrillation
@@ -402,14 +419,16 @@
                         <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&q=80&w=150"
                             alt="Preview 2">
                     </div>
-                    <button class="btn secondary" style="margin-top: 1.5rem; padding: 0.5rem 1.5rem; font-size: 0.9rem;"
-                        onclick="openModal('ecg')">More Info</button>
+                    
+                </div>
                 </div>
 
+                <div class="swiper-slide" data-cursor-text="Drag">
                 <div class="project-card glass-card">
                     <div class="project-header">
                         <div class="project-icon"><i class="fa-solid fa-shoe-prints"></i></div>
-                        <h3>Footstep Power Generation</h3>
+                        <h3 data-cursor="-opaque">Footstep Power Generation</h3>
+                        <a href="javascript:void(0)" onclick="openModal('foot')" class="card-link-icon" data-cursor-text="Open"><i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                     <p class="tag">Academic Project - 2023</p>
                     <p>Developed a system to harvest kinetic energy from human footsteps using electromagnetic
@@ -425,14 +444,16 @@
                         <img src="foot1.png" alt="Preview 1">
                         <img src="foot2.png" alt="Preview 2">
                     </div>
-                    <button class="btn secondary" style="margin-top: 1.5rem; padding: 0.5rem 1.5rem; font-size: 0.9rem;"
-                        onclick="openModal('footstep')">More Info</button>
+                    
+                </div>
                 </div>
 
+                <div class="swiper-slide" data-cursor-text="Drag">
                 <div class="project-card glass-card">
                     <div class="project-header">
                         <div class="project-icon"><i class="fa-solid fa-car-side"></i></div>
-                        <h3>Designing Double wishbone suspension system</h3>
+                        <h3 data-cursor="-opaque">Designing Double wishbone suspension system</h3>
+                        <a href="javascript:void(0)" onclick="openModal('wish')" class="card-link-icon" data-cursor-text="Open"><i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                     <p class="tag">Academic Project - 2023</p>
                     <p>Designing a double wishbone suspension system involves specifying the dimensions and
@@ -445,13 +466,15 @@
                         <img src="wishbone1.PNG" alt="Preview 1">
                         <img src="wishbone2.PNG" alt="Preview 2">
                     </div>
-                    <button class="btn secondary" style="margin-top: 1.5rem; padding: 0.5rem 1.5rem; font-size: 0.9rem;"
-                        onclick="openModal('wishbone')">More Info</button>
+                    
                 </div>
+                </div>
+                <div class="swiper-slide" data-cursor-text="Drag">
                 <div class="project-card glass-card">
                     <div class="project-header">
                         <div class="project-icon"><i class="fa-solid fa-dumpster"></i></div>
-                        <h3>Stationary Waste Compactor</h3>
+                        <h3 data-cursor="-opaque">Stationary Waste Compactor</h3>
+                        <a href="javascript:void(0)" onclick="openModal('trash')" class="card-link-icon" data-cursor-text="Open"><i class="fa-solid fa-arrow-right"></i></a>
                     </div>
                     <p class="tag">Engineering Design Package</p>
                     <p>Engineered a fully-automated, single-ram stationary compactor for North African transfer
@@ -465,20 +488,26 @@
                         <img src="compactor1.jpeg" alt="Preview 1">
                         <img src="compactor2.jpeg" alt="Preview 2">
                     </div>
-                    <button class="btn secondary" style="margin-top: 1.5rem; padding: 0.5rem 1.5rem; font-size: 0.9rem;"
-                        onclick="openModal('compactor')">More Info</button>
+                    
+                </div>
                 </div>
 
+            </div><!-- end swiper-wrapper -->
+            <div class="project-swiper-nav">
+                <div class="swiper-button-prev project-nav-btn" data-cursor-text="Prev"></div>
+                <div class="swiper-button-pause project-nav-btn" id="project-pause-btn" style="display:flex; justify-content:center; align-items:center; cursor:pointer;" data-cursor-text="Pause"><i class="fa-solid fa-pause"></i></div>
+                <div class="swiper-button-next project-nav-btn" data-cursor-text="Next"></div>
             </div>
-        </div>
+        </div><!-- end swiper -->
+        </div><!-- end container -->
     </section>
 
     <section id="skills" class="section alt-bg">
-        <div class="container reveal">
-            <h2 class="section-title">Skills & Certifications</h2>
+        <div class="container wow fadeInUp">
+            <h2 class="section-title" data-cursor="-opaque">Skills & Certifications</h2>
             <div class="skills-wrapper">
                 <div class="skills-category">
-                    <h3>Technical Skills</h3>
+                    <h3 data-cursor="-opaque">Technical Skills</h3>
                     <div class="skill-tags">
                         <span class="skill-tag">SolidWorks</span>
                         <span class="skill-tag">AutoCAD</span>
@@ -491,7 +520,7 @@
                     </div>
                 </div>
                 <div class="skills-category">
-                    <h3>Soft Skills</h3>
+                    <h3 data-cursor="-opaque">Soft Skills</h3>
                     <div class="skill-tags">
                         <span class="skill-tag">Leadership</span>
                         <span class="skill-tag">Problem-Solving</span>
@@ -503,15 +532,16 @@
             </div>
 
             <div class="certifications mt-5">
-                <h3>Certifications & Memberships</h3>
+                <h3 data-cursor="-opaque">Certifications & Memberships</h3>
                 <ul class="cert-list">
-                    <li class="cert-clickable"
-                        onclick="openCertModal('cert_revit.pdf', 'Revit 2023: Essential Training for MEP')">
-                        <div class="cert-info"><i class="fa-solid fa-certificate"></i> Revit 2023: Essential Training
-                            for MEP (LinkedIn Learning)</div>
-                        <i class="fa-solid fa-eye cert-view-icon"></i>
+                    <li>
+                        <a href="cert_revit.pdf" class="popup-video cert-clickable" style="text-decoration:none; color:inherit; display:block;" data-cursor-text="View">
+                            <div class="cert-info"><i class="fa-solid fa-certificate"></i> Revit 2023: Essential Training
+                                for MEP (LinkedIn Learning)</div>
+                            <i class="fa-solid fa-eye cert-view-icon"></i>
+                        </a>
                     </li>
-                    <li class="cert-clickable"
+                    <li class="cert-clickable" data-cursor-text="View"
                         onclick="openCertModal('cert_project_management.pdf', 'Project Management Foundations')">
                         <div class="cert-info"><i class="fa-solid fa-certificate"></i> Project Management Foundations
                             (LinkedIn Learning)</div>
@@ -521,7 +551,7 @@
                         <div class="cert-info"><i class="fa-solid fa-certificate"></i> Introductory Course on Building
                             Services Engineering (IESL)</div>
                     </li>
-                    <li class="cert-clickable"
+                    <li class="cert-clickable" data-cursor-text="View"
                         onclick="openCertModal(['cert_python1.pdf', 'cert_python2.pdf'], 'Python Data Structures &amp; Programming for Everybody')">
                         <div class="cert-info"><i class="fa-solid fa-certificate"></i> Python Data Structures &
                             Programming for Everybody (Coursera)</div>
@@ -537,8 +567,8 @@
     </section>
 
     <section id="contact" class="section">
-        <div class="container reveal">
-            <h2 class="section-title">Get in Touch</h2>
+        <div class="container wow fadeInUp">
+            <h2 class="section-title" data-cursor="-opaque">Get in Touch</h2>
             <div class="contact-card glass-card">
                 <div class="contact-info">
                     <div class="contact-item">
@@ -577,14 +607,22 @@
         <p>&copy; 2026 Tharindu Madhusanka Rajapakshe. Designed with precision.</p>
     </footer>
 
-    <script src="script.js"></script>
+    <script src="js/jquery-3.7.1.min.js"></script>
+    <script src="js/jquery.waypoints.min.js"></script>
+    <script src="js/jquery.magnific-popup.min.js"></script>
+    <script src="js/wow.min.js"></script>
+    <script src="js/gsap.min.js"></script>
+    <script src="js/magiccursor.js?v=2"></script>
+    <script src="js/parallaxie.js"></script>
+    <script src="js/swiper-bundle.min.js"></script>
+    <script src="script.js?v=4"></script>
 
     <!-- Project Modal -->
     <div id="project-modal" class="modal">
         <div class="modal-content glass-card">
             <span class="close-modal" onclick="closeModal()">&times;</span>
             <div class="modal-header">
-                <h2 id="modal-title">Project Title</h2>
+                <h2 id="modal-title" data-cursor="-opaque">Project Title</h2>
                 <p id="modal-tag" class="tag">Project Tag</p>
             </div>
             <div class="modal-body">
@@ -592,11 +630,11 @@
                     <!-- Images injected via JS -->
                 </div>
                 <div class="modal-details">
-                    <h3>Context</h3>
+                    <h3 data-cursor="-opaque">Context</h3>
                     <p id="modal-context">...</p>
-                    <h3 class="mt-small">Technical Details</h3>
+                    <h3 class="mt-small" data-cursor="-opaque">Technical Details</h3>
                     <p id="modal-tech">...</p>
-                    <h3 class="mt-small">Outcomes</h3>
+                    <h3 class="mt-small" data-cursor="-opaque">Outcomes</h3>
                     <p id="modal-outcomes">...</p>
                 </div>
             </div>
@@ -607,7 +645,7 @@
     <div id="cert-modal" class="modal">
         <div class="modal-content glass-card cert-modal-content">
             <span class="close-modal" onclick="closeCertModal()">&times;</span>
-            <h2 id="cert-modal-title" class="cert-modal-title">Certificate</h2>
+            <h2 id="cert-modal-title" class="cert-modal-title" data-cursor="-opaque">Certificate</h2>
             <div id="cert-content-wrapper" class="cert-content-wrapper">
                 <!-- Image or PDF iframe injected via JS -->
             </div>

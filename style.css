@@ -751,9 +751,16 @@ h4 {
     gap: 2rem;
 }
 
+.project-swiper .swiper-slide {
+    height: auto;
+    display: flex;
+}
+
 .project-card {
     display: flex;
     flex-direction: column;
+    height: 100%;
+    width: 100%;
 }
 
 .project-header {
@@ -1445,4 +1452,103 @@ footer {
     border: none;
     border-radius: 12px;
     background: #fff;
+}
+
+
+
+:root {
+  --accent-color: #0891b2;
+  --accent-secondary-color: #5ee7df;
+}
+
+
+/* Ensure Cursor is always on top */
+.cb-cursor, .cb-cursor-text {
+  z-index: 999999 !important;
+}
+
+
+/* Cursor Background Color */
+.cb-cursor:before {
+  background: linear-gradient(90.15deg, var(--accent-color) 1.15%, var(--accent-secondary-color) 98.84%);
+}
+
+/* Project Card Link Icon */
+.card-link-icon {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--accent-color);
+    text-decoration: none;
+    transition: all 0.3s ease;
+    transform: rotate(-45deg);
+    flex-shrink: 0;
+}
+.card-link-icon:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #fff;
+    transform: rotate(0deg);
+}
+
+/* Swiper Navigation Buttons */
+.project-swiper-nav {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-top: 20px;
+    position: relative;
+    z-index: 10;
+}
+.project-nav-btn {
+    position: static;
+    margin-top: 0;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-color);
+    transition: all 0.3s ease;
+}
+.project-nav-btn::after {
+    font-size: 1.2rem;
+}
+.project-nav-btn:hover {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #fff;
+}
+
+
+
+/* Continuous Swiper Scroll Class Toggle */
+.project-swiper.continuous .swiper-wrapper {
+    transition-timing-function: linear !important;
+}
+
+[data-cursor="-opaque"] {
+    width: fit-content;
+}
+.section-title, .greeting, .name, .title {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+/* Global Image Hover Zoom (1.5x) */
+.project-image img, .project-mini-gallery img, .timeline-images img, .hero-image-container img {
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+}
+.project-image img:hover, .project-mini-gallery img:hover, .timeline-images img:hover, .hero-image-container img:hover {
+    transform: scale(1.5) !important;
+    z-index: 10;
+    position: relative;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
