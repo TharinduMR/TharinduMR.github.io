@@ -534,10 +534,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
-                // Note: During local testing, you will need to run the Node.js backend on port 3000
-                // and change this URL to http://localhost:3000/api/chat
-                // For production, replace this with your deployed backend URL.
-                const BACKEND_URL = 'http://localhost:3000/api/chat';
+                const BACKEND_URL = 'https://portfolio-chatbot-backend-red.vercel.app/api/chat';
                 
                 const response = await fetch(BACKEND_URL, {
                     method: 'POST',
