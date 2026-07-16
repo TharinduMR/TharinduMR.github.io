@@ -116,7 +116,7 @@ app.post('/api/chat', async (req, res) => {
 
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ reply: 'Sorry, I am having trouble connecting to the brain right now!' });
+        res.status(500).json({ reply: 'Sorry, I am having trouble connecting to the brain right now!', error: error.toString(), keyStatus: !!API_KEY });
     }
 });
 
