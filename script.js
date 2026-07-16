@@ -452,29 +452,12 @@ if (messageForm) {
             const data = await response.json();
 
             if (response.ok) {
-                formResult.innerHTML = "Message sent successfully! Redirecting to WhatsApp...";
-                formResult.style.color = "var(--accent-1)";
-                
-                // Get form values for WhatsApp
-                const name = document.getElementById('msg-name').value;
-                const email = document.getElementById('msg-email').value;
-                const topic = document.getElementById('msg-topic').value;
-                const message = document.getElementById('msg-text').value;
-                
-                // Construct WhatsApp message
-                const whatsappText = `From: ${name}\nEmail: ${email}\nTopic: ${topic}\n\n${message}`;
-                const whatsappUrl = `https://wa.me/94769007190?text=${encodeURIComponent(whatsappText)}`;
-                
-                // Open WhatsApp in a new tab
-                setTimeout(() => {
-                    window.open(whatsappUrl, '_blank');
-                    messageForm.reset();
-                    submitBtn.innerHTML = originalBtnText;
-                    submitBtn.disabled = false;
-                    formResult.innerHTML = "";
-                    closeMessageModal();
-                }, 1500);
-                
+                alert("Success! Your message has been sent.");
+                messageForm.reset();
+                submitBtn.innerHTML = originalBtnText;
+                submitBtn.disabled = false;
+                formResult.innerHTML = "";
+                closeMessageModal();
             } else {
                 console.log(response);
                 formResult.innerHTML = data.message || "Something went wrong!";
