@@ -425,113 +425,117 @@ $(function () {
 });
 
 // Message Form Submission Logic
-const messageForm = document.getElementById('message-form');
-const formResult = document.getElementById('form-result');
+document.addEventListener('DOMContentLoaded', () => {
+    const messageForm = document.getElementById('message-form');
+    const formResult = document.getElementById('form-result');
+    
+    if (messageForm) {
+        messageForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(messageForm);
+            // Ensure access key is present
+            if(!formData.has('access_key')) {
+                formData.append("access_key", "148ab05f-6b34-4139-80b0-545c9d86f000");
+            }
+            
+            const submitBtn = messageForm.querySelector('button[type="submit"]');
+            const originalBtnText = submitBtn.innerHTML;
+            submitBtn.innerHTML = "Sending...";
+            submitBtn.disabled = true;
 
-if (messageForm) {
-    messageForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        const formData = new FormData(messageForm);
-        // Ensure access key is present
-        if(!formData.has('access_key')) {
-            formData.append("access_key", "148ab05f-6b34-4139-80b0-545c9d86f000");
-        }
-        
-        const submitBtn = messageForm.querySelector('button[type="submit"]');
-        const originalBtnText = submitBtn.innerHTML;
-        submitBtn.innerHTML = "Sending...";
-        submitBtn.disabled = true;
+            try {
+                const response = await fetch("https://api.web3forms.com/submit", {
+                    method: "POST",
+                    body: formData
+                });
 
-        try {
-            const response = await fetch("https://api.web3forms.com/submit", {
-                method: "POST",
-                body: formData
-            });
+                const data = await response.json();
 
-            const data = await response.json();
-
-            if (response.ok) {
-                alert("Success! Your message has been sent.");
-                messageForm.reset();
-                submitBtn.innerHTML = originalBtnText;
-                submitBtn.disabled = false;
-                formResult.innerHTML = "";
-                closeMessageModal();
-            } else {
-                console.log(response);
-                formResult.innerHTML = data.message || "Something went wrong!";
+                if (response.ok) {
+                    alert("Success! Your message has been sent.");
+                    messageForm.reset();
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                    formResult.innerHTML = "";
+                    closeMessageModal();
+                } else {
+                    console.log(response);
+                    formResult.innerHTML = data.message || "Something went wrong!";
+                    formResult.style.color = "#ff4444";
+                    submitBtn.innerHTML = originalBtnText;
+                    submitBtn.disabled = false;
+                }
+            } catch (error) {
+                console.log(error);
+                formResult.innerHTML = "Something went wrong! Please try again.";
                 formResult.style.color = "#ff4444";
                 submitBtn.innerHTML = originalBtnText;
                 submitBtn.disabled = false;
             }
-        } catch (error) {
-            console.log(error);
-            formResult.innerHTML = "Something went wrong! Please try again.";
-            formResult.style.color = "#ff4444";
-            submitBtn.innerHTML = originalBtnText;
-            submitBtn.disabled = false;
-        }
-    });
-}
+        });
+    }
+});
 
 // Chatbot Logic
-const chatToggle = document.getElementById('chatbot-toggle');
-const chatWidget = document.getElementById('chat-widget');
-const closeChat = document.getElementById('close-chat');
-const chatBox = document.getElementById('chat-box');
-const chatInput = document.getElementById('chat-input');
-const sendBtn = document.getElementById('send-btn');
+document.addEventListener('DOMContentLoaded', () => {
+    const chatToggle = document.getElementById('chatbot-toggle');
+    const chatWidget = document.getElementById('chat-widget');
+    const closeChat = document.getElementById('close-chat');
+    const chatBox = document.getElementById('chat-box');
+    const chatInput = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('send-btn');
 
-if (chatToggle && chatWidget) {
-    chatToggle.addEventListener('click', () => {
-        chatWidget.classList.toggle('hidden');
-        if (!chatWidget.classList.contains('hidden')) {
-            chatInput.focus();
-        }
-    });
+    if (chatToggle && chatWidget) {
+        chatToggle.addEventListener('click', () => {
+            chatWidget.classList.toggle('hidden');
+            if (!chatWidget.classList.contains('hidden')) {
+                chatInput.focus();
+            }
+        });
 
-    closeChat.addEventListener('click', () => {
-        chatWidget.classList.add('hidden');
-    });
+        closeChat.addEventListener('click', () => {
+            chatWidget.classList.add('hidden');
+        });
 
-    async function sendChatMessage() {
-        const message = chatInput.value.trim();
-        if (!message) return;
+        async function sendChatMessage() {
+            const message = chatInput.value.trim();
+            if (!message) return;
 
-        // Display user message
-        chatBox.innerHTML += `<div class="message user-msg">${message}</div>`;
-        chatInput.value = '';
-        chatBox.scrollTop = chatBox.scrollHeight;
-
-        try {
-            // Note: During local testing, you will need to run the Node.js backend on port 3000
-            // and change this URL to http://localhost:3000/api/chat
-            // For production, replace this with your deployed backend URL.
-            const BACKEND_URL = 'http://localhost:3000/api/chat';
-            
-            const response = await fetch(BACKEND_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: message })
-            });
-
-            if (!response.ok) throw new Error('Network response was not ok');
-
-            const data = await response.json();
-            
-            // Display bot reply
-            chatBox.innerHTML += `<div class="message bot-msg">${data.reply}</div>`;
+            // Display user message
+            chatBox.innerHTML += `<div class="message user-msg">${message}</div>`;
+            chatInput.value = '';
             chatBox.scrollTop = chatBox.scrollHeight;
 
-        } catch (error) {
-            chatBox.innerHTML += `<div class="message bot-msg" style="color: #ff4444;">Error: Could not reach the AI server. Please make sure the backend is running.</div>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
+            try {
+                // Note: During local testing, you will need to run the Node.js backend on port 3000
+                // and change this URL to http://localhost:3000/api/chat
+                // For production, replace this with your deployed backend URL.
+                const BACKEND_URL = 'http://localhost:3000/api/chat';
+                
+                const response = await fetch(BACKEND_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+
+                const data = await response.json();
+                
+                // Display bot reply
+                chatBox.innerHTML += `<div class="message bot-msg">${data.reply}</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+
+            } catch (error) {
+                chatBox.innerHTML += `<div class="message bot-msg" style="color: #ff4444;">Error: Could not reach the AI server. Please make sure the backend is running.</div>`;
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
         }
+
+        sendBtn.addEventListener('click', sendChatMessage);
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') sendChatMessage();
+        });
     }
-
-    sendBtn.addEventListener('click', sendChatMessage);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') sendChatMessage();
-    });
-}
+});
