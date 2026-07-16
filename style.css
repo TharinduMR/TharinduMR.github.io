@@ -1738,13 +1738,6 @@ footer {
     transform: scale(1.05);
 }
 
-@media (max-width: 480px) {
-    .chat-widget {
-        width: calc(100% - 40px);
-        right: 20px;
-        bottom: 90px;
-    }
-}
 
 /* Chatbot Markdown Styling */
 .bot-msg p {
