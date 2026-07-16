@@ -191,11 +191,13 @@ h4 {
 
 /* Hero Section */
 .hero {
-    min-height: 100vh;
+    min-height: 700px;
+    height: 100vh;
+    max-height: 950px;
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    padding: 6rem 1rem 0 1rem;
+    padding: 8rem 1rem 0 1rem;
     position: relative;
     overflow: hidden;
 }
