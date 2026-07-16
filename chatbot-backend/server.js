@@ -95,7 +95,8 @@ app.post('/api/chat', async (req, res) => {
                         RULES:
                         1. If a user asks a question that is not answered in the PORTFOLIO DATA above, you MUST politely decline and say: "I don't have information about that. Please reach out to Tharindu directly at tharindu.rajapakshe99@gmail.com or call +94 76 900 7190."
                         2. DO NOT make up data. Stick exactly to the provided details, numbers, and percentages.
-                        3. Be conversational but highly technical. If asked about a project, use the specific numbers (e.g., SNR dB levels, Factor of Safety, Efficiency %, Hz frequencies, Algorithms) to prove Tharindu's deep technical expertise.`
+                        3. Be conversational but highly technical. If asked about a project, use the specific numbers (e.g., SNR dB levels, Factor of Safety, Efficiency %, Hz frequencies, Algorithms) to prove Tharindu's deep technical expertise.
+                        4. Format your responses clearly using Markdown (bullet points, bold text, newlines) for readability.`
                     },
                     { role: 'user', content: userMessage }
                 ]

@@ -1743,3 +1743,26 @@ footer {
         bottom: 90px;
     }
 }
+
+/* Chatbot Markdown Styling */
+.bot-msg p {
+    margin-bottom: 0.5rem;
+}
+
+.bot-msg p:last-child {
+    margin-bottom: 0;
+}
+
+.bot-msg ul, .bot-msg ol {
+    margin-left: 1.25rem;
+    margin-bottom: 0.5rem;
+}
+
+.bot-msg li {
+    margin-bottom: 0.25rem;
+}
+
+.bot-msg strong {
+    color: var(--accent-1);
+    font-weight: 600;
+}

@@ -523,8 +523,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 const data = await response.json();
                 
+                // Parse markdown to HTML using marked.js, or fallback to simple regex if marked fails to load
+                let formattedReply = data.reply;
+                if (typeof marked !== 'undefined') {
+                    formattedReply = marked.parse(data.reply);
+                } else {
+                    formattedReply = data.reply.replace(/\n/g, '<br>');
+                }
+
                 // Display bot reply
-                chatBox.innerHTML += `<div class="message bot-msg">${data.reply}</div>`;
+                chatBox.innerHTML += `<div class="message bot-msg">${formattedReply}</div>`;
                 chatBox.scrollTop = chatBox.scrollHeight;
 
             } catch (error) {
