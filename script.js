@@ -479,7 +479,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (response.ok) {
                     // Also store in our MongoDB backend for admin dashboard
-                    fetch('http://localhost:3000/api/contact', {
+                    fetch('https://portfolio-chatbot-backend-red.vercel.app/api/contact', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
@@ -518,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // Chatbot Logic
 document.addEventListener('DOMContentLoaded', () => {
     // ---- Track Visitor (silent) ----
-    fetch('http://localhost:3000/api/track', {
+    fetch('https://portfolio-chatbot-backend-red.vercel.app/api/track', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ page: window.location.pathname, referrer: document.referrer || 'Direct' })
@@ -564,7 +564,7 @@ document.addEventListener('DOMContentLoaded', () => {
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
-                const BACKEND_URL = 'http://localhost:3000/api/chat';
+                const BACKEND_URL = 'https://portfolio-chatbot-backend-red.vercel.app/api/chat';
                 
                 const response = await fetch(BACKEND_URL, {
                     method: 'POST',
