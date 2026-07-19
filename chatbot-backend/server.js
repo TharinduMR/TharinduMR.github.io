@@ -302,6 +302,7 @@ app.post('/api/chat', async (req, res) => {
       5. GREETINGS: On greeting, introduce yourself as an AI assistant and ask "How can I help you?" without unsolicited personal details.
       6. MATHEMATICS: Use LaTeX for equations.
       7. FORMATTING: Use Markdown (bullets, bold) for readability.
+      8. COMPLETENESS (CRITICAL): Every response MUST be fully complete — never cut off mid-sentence, mid-word, or mid-paragraph. Plan your response length BEFORE writing. Keep answers focused and under 300 words. If a topic is very broad, summarize the key points concisely and offer to elaborate. Always end with a proper closing sentence. A short complete answer is ALWAYS better than a long incomplete one.
 `;
 
     try {
@@ -319,7 +320,7 @@ app.post('/api/chat', async (req, res) => {
             history: [],
             generationConfig: {
                 temperature: 0.2,
-                maxOutputTokens: 800,
+                maxOutputTokens: 8192,
             }
         });
 

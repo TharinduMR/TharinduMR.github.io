@@ -1738,7 +1738,7 @@ footer {
 }
 
 .chat-header {
-    padding: 0.5rem 1rem 0.5rem 1rem;
+    padding: 0.3rem 0.75rem;
     background: transparent;
     border-bottom: none;
     display: flex;
@@ -1748,7 +1748,7 @@ footer {
 
 .chat-header h3 {
     margin: 0;
-    font-size: 1.2rem;
+    font-size: 0.85rem;
     color: var(--accent-1);
     font-weight: 600;
 }
@@ -1764,16 +1764,17 @@ footer {
     background: none;
     border: none;
     color: var(--text-main);
-    font-size: 1.2rem;
+    font-size: 0.9rem;
     cursor: pointer;
     transition: color 0.3s;
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 2px;
 }
 
 .close-chat {
-    font-size: 1.5rem;
+    font-size: 1.1rem;
 }
 
 .close-chat:hover,
@@ -1787,21 +1788,21 @@ footer {
 
 .chat-box {
     flex-grow: 1;
-    padding: 0 1rem 0 1rem;
+    padding: 0 0.6rem;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    height: calc(100% - 110px);
+    gap: 6px;
+    height: calc(100% - 75px);
     min-height: 150px;
 }
 
 .message {
-    padding: 0.75rem 1rem;
-    border-radius: 12px;
-    font-size: 0.95rem;
-    line-height: 1.4;
-    max-width: 85%;
+    padding: 0.4rem 0.65rem;
+    border-radius: 10px;
+    font-size: 0.78rem;
+    line-height: 1.35;
+    max-width: 90%;
     word-wrap: break-word;
 }
 
@@ -1822,10 +1823,10 @@ footer {
 }
 
 .chat-input-area {
-    padding: 0.5rem 1rem;
+    padding: 0.35rem 0.6rem;
     border-top: 1px solid var(--glass-border);
     display: flex;
-    gap: 10px;
+    gap: 8px;
 }
 
 .chat-input {
