@@ -667,26 +667,57 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 if (!response.ok) throw new Error('Network response was not ok');
 
-                const data = await response.json();
-                
-                // Remove typing indicator
+                // Remove typing indicator and create bot message div
                 const typingEl = document.getElementById(typingId);
                 if (typingEl) typingEl.remove();
 
-                // Parse markdown to HTML using marked.js, or fallback to simple regex if marked fails to load
-                let formattedReply = data.reply;
-                if (typeof marked !== 'undefined') {
-                    formattedReply = marked.parse(data.reply);
-                } else {
-                    formattedReply = data.reply.replace(/\n/g, '<br>');
+                const botMsgDiv = document.createElement('div');
+                botMsgDiv.className = 'message bot-msg';
+                chatBox.appendChild(botMsgDiv);
+
+                // Read SSE stream progressively
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullReply = '';
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // keep incomplete line in buffer
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            try {
+                                const parsed = JSON.parse(line.slice(6));
+                                if (parsed.chunk) {
+                                    fullReply += parsed.chunk;
+                                    // Show raw text while streaming
+                                    botMsgDiv.innerText = fullReply;
+                                    chatBox.scrollTop = chatBox.scrollHeight;
+                                }
+                                if (parsed.error) {
+                                    botMsgDiv.style.color = '#ff4444';
+                                    botMsgDiv.innerText = 'Error: ' + parsed.error;
+                                }
+                            } catch (e) { /* skip malformed JSON */ }
+                        }
+                    }
                 }
 
-                // Display bot reply
-                chatBox.innerHTML += `<div class="message bot-msg">${formattedReply}</div>`;
-                
+                // After stream completes, render markdown + LaTeX
+                if (typeof marked !== 'undefined') {
+                    botMsgDiv.innerHTML = marked.parse(fullReply);
+                } else {
+                    botMsgDiv.innerHTML = fullReply.replace(/\n/g, '<br>');
+                }
+
                 // Render LaTeX Math if KaTeX is loaded
                 if (typeof renderMathInElement === 'function') {
-                    renderMathInElement(chatBox.lastElementChild, {
+                    renderMathInElement(botMsgDiv, {
                         delimiters: [
                             {left: '$$', right: '$$', display: true},
                             {left: '$', right: '$', display: false},
@@ -697,14 +728,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     });
                 }
                 
-                // Enhance PDF links to be downloadable buttons
-                chatBox.lastElementChild.querySelectorAll('a[href$=".pdf"]').forEach(link => {
+                // Enhance PDF links
+                botMsgDiv.querySelectorAll('a[href$=".pdf"]').forEach(link => {
                     link.setAttribute('download', '');
                     link.classList.add('btn', 'primary');
                     link.style.display = 'inline-block';
                     link.style.marginTop = '8px';
-                    link.style.fontSize = '0.9rem';
-                    link.style.padding = '6px 12px';
+                    link.style.fontSize = '0.78rem';
+                    link.style.padding = '4px 10px';
                     link.innerHTML = '<i class="fa-solid fa-download"></i> ' + link.innerText;
                 });
 

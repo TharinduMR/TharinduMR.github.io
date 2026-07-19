@@ -312,9 +312,8 @@ app.post('/api/chat', async (req, res) => {
         const genAI = new GoogleGenerativeAI(geminiApiKey);
 
         const model = genAI.getGenerativeModel({
-            model: "gemini-3.5-flash",
+            model: "gemini-2.0-flash",
             systemInstruction: systemInstruction
-
         });
 
         const chat = model.startChat({
@@ -325,28 +324,48 @@ app.post('/api/chat', async (req, res) => {
             }
         });
 
-        const result = await chat.sendMessage(userMessage);
-        const botReply = result.response.text();
+        // Stream response using SSE to avoid Vercel timeout
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        res.setHeader('X-Accel-Buffering', 'no');
 
-        // Store chat in MongoDB
+        const result = await chat.sendMessageStream(userMessage);
+        let fullReply = '';
+
+        for await (const chunk of result.stream) {
+            const text = chunk.text();
+            fullReply += text;
+            res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+        }
+
+        // Signal stream complete
+        res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+        res.end();
+
+        // Store chat in MongoDB (after streaming completes)
         try {
             let chatSession = await ChatSession.findOne({ sessionId });
             if (!chatSession) {
                 chatSession = new ChatSession({ sessionId, ip, messages: [] });
             }
             chatSession.messages.push({ role: 'user', content: userMessage });
-            chatSession.messages.push({ role: 'bot', content: botReply });
+            chatSession.messages.push({ role: 'bot', content: fullReply });
             chatSession.updatedAt = new Date();
             await chatSession.save();
         } catch (dbErr) {
             console.error('Chat DB save error:', dbErr.message);
         }
 
-        res.json({ reply: botReply });
-
     } catch (error) {
         console.error('Error:', error);
-        res.status(500).json({ reply: 'Sorry, I am having trouble connecting to the brain right now!', error: error.toString(), keyStatus: !!API_KEY });
+        // If headers already sent (streaming started), just end
+        if (res.headersSent) {
+            res.write(`data: ${JSON.stringify({ error: 'Stream interrupted' })}\n\n`);
+            res.end();
+        } else {
+            res.status(500).json({ reply: 'Sorry, I am having trouble connecting right now!', error: error.toString() });
+        }
     }
 });
 
