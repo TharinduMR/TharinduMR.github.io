@@ -43,10 +43,10 @@ body {
 
 body[data-theme="light"] {
     background: radial-gradient(ellipse 60% 50% at 90% 10%,
-            #fde6c4 0%,
+            #c4fbfdeb 0%,
             transparent 55%),
-        radial-gradient(ellipse 50% 40% at 5% 90%, #fff0d8 0%, transparent 50%),
-        linear-gradient(180deg, #faf5ec 0%, #f7eedb 100%);
+        radial-gradient(ellipse 50% 40% at 5% 90%, #d8faffca 0%, transparent 50%),
+        linear-gradient(180deg, #faecfac9 0%, #f7eedb 100%);
     background-attachment: fixed;
 
     /* Re-evaluate aliases for light theme since root is missing them */
@@ -269,7 +269,7 @@ h4 {
     left: -15px;
     width: calc(100% + 30px);
     height: calc(100% + 30px);
-    background-image: url('hero_bg.png');
+    background-image: url('../media/images/hero_bg.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -1126,20 +1126,22 @@ footer {
 
 /* Responsive */
 @media (max-width: 768px) {
+
     /* Chatbot Fixes for Mobile */
     .chatbot-toggle {
         bottom: 90px;
         right: 10px;
-        left: 2px
-        width: 50px;
+        left: 2px width: 50px;
         height: 50px;
         font-size: 1.2rem;
     }
+
     .chat-widget {
         bottom: 200px;
         right: 15px;
         width: calc(100% - 30px);
     }
+
     /* Brand Logo - Mobile */
     .brand-logo {
         display: none;
@@ -1887,6 +1889,17 @@ footer {
 .bot-msg strong {
     color: var(--accent-1);
     font-weight: 600;
+}
+
+.model-attribution {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.55em;
+    opacity: 0.65;
+    font-style: italic;
+    letter-spacing: 0.3px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.12);
+    padding-top: 6px;
 }
 
 /* Typing Animation */

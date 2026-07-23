@@ -99,8 +99,8 @@ const projectData = {
         context: "Engineered a dual-body vortex-induced vibration (VIV) system to harvest energy from low-speed winds (1–15 m/s). Detailed research report and analysis.",
         tech: "Utilized a NACA 0012 airfoil as the primary bluff body and a downstream cylinder in the wake. Integrated permanent magnet linear generators (PMLGs).",
         outcomes: "Achieved 87.5 W peak power at resonance (11 m/s) and a peak system efficiency of 7.32%. Conducted comprehensive CFD simulations to validate aerodynamics.",
-        images: ["foot1.png", "foot2.png"],
-        pdf: "Low_Velocity_Wind_power_Generation.pdf"
+        images: ["media/images/foot1.png", "media/images/foot2.png"],
+        pdf: "media/Pdf/Low_Velocity_Wind_power_Generation.pdf"
     },
     separator: {
         title: "CFD Analysis of an Air and Dirt Separator",
@@ -109,7 +109,7 @@ const projectData = {
         tech: "ANSYS Fluent, k-ω SST turbulence model, Discrete Phase Model (DPM), MATLAB/Python for data analysis, and LaTeX for reporting. A boundary-specific sampling methodology was developed to accurately distinguish successful separation (venting) from failed separation (escaping through the outlet).",
         outcomes: "Validated pressure drops (0.37–0.80 PSI) with analytically consistent K-factors (CoV < 5%). Confirmed dirt separation efficiency exceeding 96% with zero particles escaping the outlet. Demonstrated highly size-dependent air bubble separation (>95% for 100 µm bubbles). Delivered a full engineering report with pgfplots performance curves ready for product datasheets.",
         images: ["https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=800"],
-        pdf: "D_F_Report_Updated.pdf"
+        pdf: "media/Pdf/D_F_Report_Updated.pdf"
     },
     ecg: {
         title: "Measuring ECG via Defibrillator",
@@ -118,7 +118,7 @@ const projectData = {
         tech: "Developed signal processing algorithms in MATLAB and Python to effectively filter artifacts and extract diagnostically clear cardiac waveforms.",
         outcomes: "Successfully isolated clean ECG signals from high noise environments, improving diagnostic reliability during emergency defibrillation scenarios.",
         images: ["https://images.unsplash.com/photo-1551076805-e1869033e561?auto=format&fit=crop&q=80&w=800"],
-        pdf: "ECG.pdf"
+        pdf: "media/Pdf/ECG.pdf"
     },
     footstep: {
         title: "Footstep Power Generation",
@@ -127,7 +127,7 @@ const projectData = {
         tech: "Designed rack and pinion mechanisms coupled with dynamos to convert linear motion of footsteps into rotational energy.",
         outcomes: "Conducted simulations to optimize the energy output specifically for low-traffic staircase environments, providing a proof-of-concept for off-grid lighting.",
         images: ["https://images.unsplash.com/photo-1555664424-778a1e5e1b48?auto=format&fit=crop&q=80&w=800"],
-        pdf: "footstep.pdf"
+        pdf: "media/Pdf/footstep.pdf"
     },
     wishbone: {
         title: "Double Wishbone Suspension System",
@@ -136,7 +136,7 @@ const projectData = {
         tech: "Utilized FEA methods for structural analysis and optimization of the suspension components.",
         outcomes: "Developed a comprehensive design package with detailed specifications and performance evaluations.",
         images: ["https://images.unsplash.com/photo-1556911259-8e7d5f0a0c0e?auto=format&fit=crop&q=80&w=800"],
-        pdf: "double_dishbone.pdf"
+        pdf: "media/Pdf/double_dishbone.pdf"
     }
 };
 
@@ -657,7 +657,8 @@ document.addEventListener('DOMContentLoaded', () => {
             chatBox.scrollTop = chatBox.scrollHeight;
 
             try {
-                const BACKEND_URL = '/api/chat';
+                const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+                const BACKEND_URL = API_BASE + '/api/chat';
                 
                 const response = await fetch(BACKEND_URL, {
                     method: 'POST',
@@ -708,11 +709,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                // After stream completes, render markdown + LaTeX
+                // After stream completes, preprocess LaTeX math delimiters before markdown rendering
+                let cleanMathReply = fullReply
+                    // Convert \( ... \) into $ ... $
+                    .replace(/\\\\\(/g, '$').replace(/\\\\\)/g, '$')
+                    .replace(/\\\(/g, '$').replace(/\\\)/g, '$')
+                    // Convert \[ ... \] into $$ ... $$
+                    .replace(/\\\\\[/g, '$$').replace(/\\\\\]/g, '$$')
+                    .replace(/\\\[/g, '$$').replace(/\\\]/g, '$$')
+                    // Convert malformed parentheses math like ( k = 19620 , \text{N/m} ) into $ ... $
+                    .replace(/\(\s*([a-zA-Z0-9_\s=+\-*/.,\\]*\\(?:text|frac|sqrt|mathrm|vec|hat|alpha|beta|gamma|delta|theta|pi|omega)[^{}]*(?:\{[^}]*\})?[^()]*)\)/g, '$ $1 $');
+
                 if (typeof marked !== 'undefined') {
-                    botMsgDiv.innerHTML = marked.parse(fullReply);
+                    botMsgDiv.innerHTML = marked.parse(cleanMathReply);
                 } else {
-                    botMsgDiv.innerHTML = fullReply.replace(/\n/g, '<br>');
+                    botMsgDiv.innerHTML = cleanMathReply.replace(/\n/g, '<br>');
                 }
 
                 // Render LaTeX Math if KaTeX is loaded
