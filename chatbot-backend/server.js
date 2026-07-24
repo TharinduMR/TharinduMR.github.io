@@ -176,7 +176,7 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
             // Last 7 days aggregation
             Visit.aggregate([
                 { $match: { timestamp: { $gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) } } },
-                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: '$timestamp' } }, views: { $sum: 1 } } },
+                { $group: { _id: { $dateToString: { format: '%Y-%m-%d', date: { $toDate: '$timestamp' } } }, views: { $sum: 1 } } },
                 { $sort: { _id: 1 } }
             ]),
             Visit.find().sort({ timestamp: -1 }).limit(30).lean()
