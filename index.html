@@ -744,22 +744,38 @@
     <div id="chat-widget" class="chat-widget glass-card hidden">
         <div id="chat-resize-handle" class="chat-resize-handle" title="Resize Chatbox"></div>
         <div class="chat-header">
-            <h3>AI Assistant</h3>
+            <div class="chat-header-left">
+                <button id="close-chat" class="close-chat" title="Close Chatbox"><i class="fa-solid fa-chevron-left"></i></button>
+                <h3>Hi there! 👋</h3>
+            </div>
             <div class="chat-header-actions">
-                <button id="pin-chat" class="pin-chat" title="Pin Chatbox"><i
-                        class="fa-solid fa-thumbtack"></i></button>
-                <button id="close-chat" class="close-chat" title="Close Chatbox">&times;</button>
+                <button id="pin-chat" class="pin-chat" title="Pin Chatbox"><i class="fa-solid fa-thumbtack"></i></button>
+                <button id="expand-chat" class="expand-chat" title="Split View"><i class="fa-solid fa-arrows-left-right-to-line"></i></button>
             </div>
         </div>
         <div id="chat-box" class="chat-box">
-            <div class="message bot-msg">Hi! I'm Tharindu's AI assistant. Ask me anything about his work, skills, or
-                experience!</div>
+            <div class="message bot-msg">Hi! I'm Tharindu's AI assistant. Ask me anything</div>
+        </div>
+        <div id="chat-file-preview" class="chat-file-preview-container">
+            <div class="chat-file-name" title="">
+                <i id="chat-file-icon" class="fa-solid fa-file"></i>
+                <span id="chat-file-text">filename.txt</span>
+            </div>
+            <button id="chat-remove-file" class="chat-remove-file" title="Remove attachment"><i class="fa-solid fa-times"></i></button>
         </div>
         <div class="chat-input-area">
-            <input type="text" id="chat-input" class="glass-input chat-input" placeholder="Type a message...">
-            <button id="send-btn" class="chat-send-btn"><i class="fa-solid fa-paper-plane"></i></button>
+            <div class="chat-input-wrapper">
+                <label for="chat-file-input" class="chat-attach-btn" title="Attach file">
+                    <i class="fa-solid fa-paperclip"></i>
+                </label>
+                <input type="file" id="chat-file-input" accept=".jpg,.jpeg,.png,.pdf,.txt,.md,.csv,.json,.doc,.docx,.ppt,.pptx" style="display: none;">
+                <input type="text" id="chat-input" class="chat-input" placeholder="Enter your message...">
+                <button id="send-btn" class="send-btn" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
+            </div>
         </div>
     </div>
+    
+    <script src="js/mediaHandler.js"></script>
 </body>
 
 </html>

@@ -5,11 +5,15 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const fs = require('fs');
 const path = require('path');
+const { parseMediaPayload } = require('./mediaParser');
 
 const app = express();
 
+const sessionHistories = {};
+
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // ============================================================
 // MONGODB CONNECTION
@@ -327,11 +331,11 @@ function getTaskComplexity(message) {
 }
 
 // ============================================================
-// CHAT ENDPOINT (Gemini Primary + Zhipu Fallback + Attribution)
+// AI CHATBOT ENDPOINT (Gemini Primary + Zhipu Fallback + Attribution)
 // ============================================================
 app.post('/api/chat', async (req, res) => {
-    const { message, sessionId } = req.body;
-    const userMessage = message || '';
+    const { message, sessionId, fileData, fileName, fileType, isTextFile } = req.body;
+    let userMessage = message || '';
     const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
     const complexity = getTaskComplexity(userMessage);
@@ -344,6 +348,20 @@ app.post('/api/chat', async (req, res) => {
     }
 
     const fullInstruction = systemInstruction + '\n\n--- ADVANCED KNOWLEDGE BASE ---\n' + advancedKnowledge;
+
+    // Parse media payloads
+    const parsedMedia = parseMediaPayload(userMessage, fileData, fileName, fileType, isTextFile);
+
+    if (!sessionId) {
+        return res.status(400).json({ reply: 'Session ID is required.' });
+    }
+
+    if (!sessionHistories[sessionId]) {
+        sessionHistories[sessionId] = {
+            gemini: [],
+            zhipu: []
+        };
+    }
 
     // SSE headers
     res.setHeader('Content-Type', 'text/event-stream');
@@ -370,8 +388,10 @@ app.post('/api/chat', async (req, res) => {
                 systemInstruction: fullInstruction
             });
 
-            const chat = model.startChat({ history: [] });
-            const result = await chat.sendMessageStream(userMessage);
+            const chat = model.startChat({ history: sessionHistories[sessionId].gemini });
+            
+            // Send payload (string or array of parts)
+            const result = await chat.sendMessageStream(parsedMedia.geminiPayload);
 
             for await (const chunk of result.stream) {
                 const text = chunk.text();
@@ -379,6 +399,21 @@ app.post('/api/chat', async (req, res) => {
                 res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
             }
             geminiSuccess = true;
+
+            // Save history
+            const userParts = Array.isArray(parsedMedia.geminiPayload) ? parsedMedia.geminiPayload : [{ text: String(parsedMedia.geminiPayload) }];
+            sessionHistories[sessionId].gemini.push({ role: 'user', parts: userParts });
+            sessionHistories[sessionId].gemini.push({ role: 'model', parts: [{ text: fullReply }] });
+
+            const zhipuUserContent = Array.isArray(parsedMedia.zhipuPayload) ? parsedMedia.zhipuPayload : String(parsedMedia.zhipuPayload);
+            sessionHistories[sessionId].zhipu.push({ role: 'user', content: zhipuUserContent });
+            sessionHistories[sessionId].zhipu.push({ role: 'assistant', content: fullReply });
+
+            if (sessionHistories[sessionId].gemini.length > 20) {
+                sessionHistories[sessionId].gemini = sessionHistories[sessionId].gemini.slice(-20);
+                sessionHistories[sessionId].zhipu = sessionHistories[sessionId].zhipu.slice(-20);
+            }
+
         } catch (geminiErr) {
             console.warn('Primary Gemini API failed/exceeded quota. Falling back to Zhipu AI...', geminiErr.message);
             fullReply = ''; // Reset reply buffer for fallback
@@ -395,15 +430,25 @@ app.post('/api/chat', async (req, res) => {
                 baseURL: "https://open.bigmodel.cn/api/paas/v4/"
             });
 
-            const zhipuModel = complexity === 'heavy' ? 'glm-4' : 'glm-4-flash';
-            usedModelName = complexity === 'heavy' ? 'Zhipu GLM-4 (Fallback)' : 'Zhipu GLM-4 Flash (Fallback)';
+            let zhipuModel = complexity === 'heavy' ? 'glm-4' : 'glm-4-flash';
+            if (parsedMedia.zhipuModelOverride) {
+                zhipuModel = parsedMedia.zhipuModelOverride;
+            }
+            usedModelName = `Zhipu ${zhipuModel.toUpperCase()} (Fallback)`;
+
+            // Format message array for Zhipu
+            let messagesPayload = [{ role: "system", content: fullInstruction }];
+            messagesPayload = messagesPayload.concat(sessionHistories[sessionId].zhipu);
+
+            if (Array.isArray(parsedMedia.zhipuPayload)) {
+                messagesPayload.push({ role: "user", content: parsedMedia.zhipuPayload });
+            } else {
+                messagesPayload.push({ role: "user", content: String(parsedMedia.zhipuPayload) });
+            }
 
             const stream = await openai.chat.completions.create({
                 model: zhipuModel,
-                messages: [
-                    { role: "system", content: fullInstruction },
-                    { role: "user", content: userMessage }
-                ],
+                messages: messagesPayload,
                 stream: true,
                 temperature: 0.2,
                 max_tokens: 2048
@@ -416,6 +461,21 @@ app.post('/api/chat', async (req, res) => {
                     res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
                 }
             }
+
+            // Save history
+            const zhipuUserContent = Array.isArray(parsedMedia.zhipuPayload) ? parsedMedia.zhipuPayload : String(parsedMedia.zhipuPayload);
+            sessionHistories[sessionId].zhipu.push({ role: 'user', content: zhipuUserContent });
+            sessionHistories[sessionId].zhipu.push({ role: 'assistant', content: fullReply });
+
+            const userParts = Array.isArray(parsedMedia.geminiPayload) ? parsedMedia.geminiPayload : [{ text: String(parsedMedia.geminiPayload) }];
+            sessionHistories[sessionId].gemini.push({ role: 'user', parts: userParts });
+            sessionHistories[sessionId].gemini.push({ role: 'model', parts: [{ text: fullReply }] });
+
+            if (sessionHistories[sessionId].gemini.length > 20) {
+                sessionHistories[sessionId].gemini = sessionHistories[sessionId].gemini.slice(-20);
+                sessionHistories[sessionId].zhipu = sessionHistories[sessionId].zhipu.slice(-20);
+            }
+
         } catch (zhipuErr) {
             console.error('Zhipu Fallback API Error:', zhipuErr.message);
             if (!res.headersSent) {

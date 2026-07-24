@@ -577,8 +577,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const chatBox = document.getElementById('chat-box');
     const chatInput = document.getElementById('chat-input');
     const sendBtn = document.getElementById('send-btn');
+    const expandChat = document.getElementById('expand-chat');
     
     let isChatPinned = false;
+    let isChatExpanded = false;
 
     // Custom Top-Left Resize Logic
     const resizeHandle = document.getElementById('chat-resize-handle');
@@ -602,13 +604,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
         function doDrag(e) {
             if (!isResizing) return;
-            // When anchored at bottom/right, dragging left/up INCREASES width/height
-            const newWidth = startWidth - (e.clientX - startX);
-            const newHeight = startHeight - (e.clientY - startY);
             
-            // Apply new dimensions with min constraints
-            chatWidget.style.width = Math.max(newWidth, 300) + 'px';
-            chatWidget.style.height = Math.max(newHeight, 400) + 'px';
+            const newWidth = startWidth - (e.clientX - startX);
+            const clampedWidth = Math.max(newWidth, 300);
+
+            if (isChatExpanded) {
+                // Split view resizing (only width)
+                chatWidget.style.width = clampedWidth + 'px';
+                document.body.style.width = `calc(100vw - ${clampedWidth}px)`;
+                document.documentElement.style.setProperty('--chat-width', clampedWidth + 'px');
+            } else {
+                // Floating view resizing
+                const newHeight = startHeight - (e.clientY - startY);
+                chatWidget.style.width = clampedWidth + 'px';
+                chatWidget.style.height = Math.max(newHeight, 400) + 'px';
+            }
         }
 
         function stopDrag() {
@@ -630,6 +640,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         closeChat.addEventListener('click', () => {
             chatWidget.classList.add('hidden');
+            if (isChatExpanded) {
+                isChatExpanded = false;
+                chatWidget.classList.remove('expanded');
+                document.body.classList.remove('split-active');
+                chatWidget.style.width = '';
+                chatWidget.style.height = '';
+                document.body.style.width = '';
+                expandChat.innerHTML = '<i class="fa-solid fa-arrows-left-right-to-line"></i>';
+                expandChat.title = "Split View";
+            }
         });
         
         if (pinChat) {
@@ -642,10 +662,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             });
         }
+        
+        if (expandChat) {
+            expandChat.addEventListener('click', (e) => {
+                e.stopPropagation();
+                isChatExpanded = !isChatExpanded;
+                
+                chatWidget.style.width = '';
+                chatWidget.style.height = '';
+                document.body.style.width = '';
+                document.documentElement.style.removeProperty('--chat-width');
+                
+                if (isChatExpanded) {
+                    chatWidget.classList.add('expanded');
+                    document.body.classList.add('split-active');
+                    expandChat.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i>';
+                    expandChat.title = "Exit Split View";
+                } else {
+                    chatWidget.classList.remove('expanded');
+                    document.body.classList.remove('split-active');
+                    expandChat.innerHTML = '<i class="fa-solid fa-arrows-left-right-to-line"></i>';
+                    expandChat.title = "Split View";
+                }
+            });
+        }
 
         // Close when clicking outside
         document.addEventListener('click', (e) => {
-            if (!isChatPinned && !chatWidget.classList.contains('hidden')) {
+            if (!isChatPinned && !isChatExpanded && !chatWidget.classList.contains('hidden')) {
                 if (!chatWidget.contains(e.target) && !chatToggle.contains(e.target)) {
                     chatWidget.classList.add('hidden');
                 }
@@ -654,10 +698,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
         async function sendChatMessage() {
             const message = chatInput.value.trim();
-            if (!message) return;
+            if (!message && (!window.MediaHandler || !window.MediaHandler.getFilePayload())) return;
 
             // Display user message
-            chatBox.innerHTML += `<div class="message user-msg">${message}</div>`;
+            let fileAttachmentHTML = '';
+            if (window.MediaHandler) {
+                const filePayload = window.MediaHandler.getFilePayload();
+                if (filePayload) {
+                    if (filePayload.fileType && filePayload.fileType.startsWith('image/')) {
+                        fileAttachmentHTML = `<div class="chat-msg-attachment"><img src="data:${filePayload.fileType};base64,${filePayload.fileData}" alt="attached image" class="chat-msg-img"></div>`;
+                    } else {
+                        let iconClass = 'fa-file';
+                        if (filePayload.fileType === 'application/pdf') iconClass = 'fa-file-pdf';
+                        else if (filePayload.isTextFile) iconClass = 'fa-file-lines';
+                        
+                        fileAttachmentHTML = `<div class="chat-msg-attachment"><i class="fa-solid ${iconClass}"></i> <span>${filePayload.fileName}</span></div>`;
+                    }
+                }
+            }
+
+            chatBox.innerHTML += `<div class="message user-msg">${fileAttachmentHTML}${message}</div>`;
             chatInput.value = '';
             chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -669,10 +729,21 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const BACKEND_URL = getApiBase() + '/api/chat';
                 
+                let payload = { message: message, sessionId: chatSessionId };
+                
+                // Add media file payload if available
+                if (window.MediaHandler) {
+                    const filePayload = window.MediaHandler.getFilePayload();
+                    if (filePayload) {
+                        Object.assign(payload, filePayload);
+                    }
+                    window.MediaHandler.clearFile(); // clear UI preview after sending
+                }
+                
                 const response = await fetch(BACKEND_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ message: message, sessionId: chatSessionId })
+                    body: JSON.stringify(payload)
                 });
 
                 if (!response.ok) throw new Error('Network response was not ok');
