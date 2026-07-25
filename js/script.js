@@ -801,6 +801,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const decoder = new TextDecoder();
                 let fullReply = '';
                 let buffer = '';
+                let generatedImageUrl = null;
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -817,42 +818,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 if (parsed.chunk) {
                                     fullReply += parsed.chunk;
                                     // Show raw text while streaming
-                                    botMsgDiv.innerText = fullReply;
+                                    botMsgDiv.innerText = fullReply + (generatedImageUrl ? '\n[Generated Image]' : '');
                                     chatBox.scrollTop = chatBox.scrollHeight;
                                 }
                                 if (parsed.image) {
-                                    // Render any accumulated text before the image
-                                    if (fullReply.trim()) {
-                                        const textPart = document.createElement('div');
-                                        textPart.className = 'chat-img-caption';
-                                        textPart.textContent = fullReply.replace('[Generated Image]', '').trim();
-                                        botMsgDiv.innerHTML = '';
-                                        botMsgDiv.appendChild(textPart);
-                                    } else {
-                                        botMsgDiv.innerHTML = '';
-                                    }
-
-                                    // Create image container
-                                    const imgContainer = document.createElement('div');
-                                    imgContainer.className = 'chat-generated-img-container';
-
-                                    const img = document.createElement('img');
-                                    img.src = parsed.image;
-                                    img.alt = 'AI Generated Image';
-                                    img.className = 'chat-generated-img';
-                                    img.loading = 'lazy';
-                                    imgContainer.appendChild(img);
-
-                                    // Download button
-                                    const dlBtn = document.createElement('a');
-                                    dlBtn.href = parsed.image;
-                                    dlBtn.download = 'generated-image-' + Date.now() + '.png';
-                                    dlBtn.className = 'chat-img-download-btn';
-                                    dlBtn.innerHTML = '<i class="fa-solid fa-download"></i> Download Image';
-                                    imgContainer.appendChild(dlBtn);
-
-                                    botMsgDiv.appendChild(imgContainer);
-                                    fullReply += '\n[Generated Image]\n';
+                                    generatedImageUrl = parsed.image;
+                                    botMsgDiv.innerText = fullReply + '\n[Generated Image]';
                                     chatBox.scrollTop = chatBox.scrollHeight;
                                 }
                                 if (parsed.error) {
@@ -879,6 +850,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     botMsgDiv.innerHTML = marked.parse(cleanMathReply);
                 } else {
                     botMsgDiv.innerHTML = cleanMathReply.replace(/\n/g, '<br>');
+                }
+
+                // If an image was generated, replace the [Generated Image] placeholder with the actual image HTML
+                if (generatedImageUrl) {
+                    const imgHtml = `
+                        <div class="chat-generated-img-container">
+                            <img src="${generatedImageUrl}" class="chat-generated-img" alt="AI Generated Image" loading="lazy">
+                            <a href="${generatedImageUrl}" download="generated-image-${Date.now()}.png" class="chat-img-download-btn" target="_blank">
+                                <i class="fa-solid fa-download"></i> Download Image
+                            </a>
+                        </div>
+                    `;
+                    if (botMsgDiv.innerHTML.includes('[Generated Image]')) {
+                        botMsgDiv.innerHTML = botMsgDiv.innerHTML.replace('[Generated Image]', imgHtml);
+                    } else {
+                        botMsgDiv.innerHTML += imgHtml;
+                    }
                 }
 
                 // Render LaTeX Math if KaTeX is loaded
