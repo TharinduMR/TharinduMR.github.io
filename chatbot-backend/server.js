@@ -421,7 +421,7 @@ app.post('/api/chat', async (req, res) => {
     let zhipuModelOverride = null;
 
     const codingTask = isCodingTask(userMessage);
-    let geminiModelsToTry = complexity === 'heavy' ? ['gemini-2.5-pro', 'gemini-pro-latest', 'gemini-1.5-pro', 'gemini-flash-latest'] : ['gemini-flash-latest', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+    let geminiModelsToTry = complexity === 'heavy' ? ['gemini-3.1-pro-preview', 'gemini-2.0-flash', 'gemini-flash-latest'] : ['gemini-2.0-flash', 'gemini-3.5-flash', 'gemini-flash-latest'];
 
     // Auto-select DeepSeek for coding tasks when auto is selected
     if ((!selectedModel || selectedModel === 'auto') && codingTask) {
@@ -446,25 +446,25 @@ app.post('/api/chat', async (req, res) => {
             deepSeekModelOverride = 'deepseek-coder';
             usedModelName = 'DeepSeek Coder';
         } else if (selectedModel === 'gemini-3.1-pro') {
-            geminiModelsToTry = ['gemini-3.1-pro-preview', 'gemini-3-pro-preview', 'gemini-2.5-pro', 'gemini-pro-latest', 'gemini-1.5-pro', 'gemini-flash-latest'];
+            geminiModelsToTry = ['gemini-3.1-pro-preview', 'gemini-2.0-flash', 'gemini-flash-latest'];
             usedModelName = 'Gemini 3.1 Pro (High)';
         } else if (selectedModel === 'gemini-3.5-flash') {
-            geminiModelsToTry = ['gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-flash-latest'];
+            geminiModelsToTry = ['gemini-3.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
             usedModelName = 'Gemini 3.5 Flash';
         } else if (selectedModel === 'gemini-3.6-flash') {
-            geminiModelsToTry = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-flash-latest'];
+            geminiModelsToTry = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
             usedModelName = 'Gemini 3.6 Flash';
         } else if (selectedModel === 'gemini-2.5-pro') {
-            geminiModelsToTry = ['gemini-2.5-pro', 'gemini-pro-latest', 'gemini-1.5-pro', 'gemini-flash-latest'];
+            geminiModelsToTry = ['gemini-3.1-pro-preview', 'gemini-2.0-flash', 'gemini-flash-latest'];
             usedModelName = 'Gemini 2.5 Pro';
         } else if (selectedModel === 'gemini-2.5-flash') {
-            geminiModelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
+            geminiModelsToTry = ['gemini-2.0-flash', 'gemini-3.5-flash', 'gemini-flash-latest'];
             usedModelName = 'Gemini 2.5 Flash';
         } else if (selectedModel === 'gemini-2.0-flash') {
             geminiModelsToTry = ['gemini-2.0-flash', 'gemini-flash-latest'];
             usedModelName = 'Gemini 2.0 Flash';
         } else if (selectedModel === 'gemini-flash-latest' || selectedModel === 'gemini-flash') {
-            geminiModelsToTry = ['gemini-flash-latest', 'gemini-1.5-flash'];
+            geminiModelsToTry = ['gemini-flash-latest', 'gemini-2.0-flash'];
             usedModelName = 'Gemini 1.5 Flash (Free Tier)';
         } else if (selectedModel === 'glm-4-plus') {
             forceZhipu = true;
@@ -617,6 +617,19 @@ app.post('/api/chat', async (req, res) => {
                 usedModelName = `Zhipu ${zhipuModel.toUpperCase()} (Fallback)`;
             } else {
                 usedModelName = `Zhipu ${zhipuModel.toUpperCase()}`;
+            }
+
+            let hasVisionContent = Array.isArray(parsedMedia.zhipuPayload);
+            if (!hasVisionContent) {
+                for (const m of sessionHistories[sessionId].zhipu) {
+                    if (Array.isArray(m.content)) {
+                        hasVisionContent = true;
+                        break;
+                    }
+                }
+            }
+            if (hasVisionContent && zhipuModel !== 'glm-4v' && zhipuModel !== 'glm-4v-plus') {
+                zhipuModel = 'glm-4v';
             }
 
             // Format message array for Zhipu
