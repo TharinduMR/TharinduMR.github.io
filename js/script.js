@@ -727,7 +727,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             chatBox.innerHTML += `<div class="message user-msg">${fileAttachmentHTML}${message}</div>`;
             chatInput.value = '';
-            chatInput.style.height = 'auto';
+            chatInput.style.height = '24px';
             chatBox.scrollTop = chatBox.scrollHeight;
 
             // Add typing indicator
@@ -953,8 +953,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
         chatInput.addEventListener('input', () => {
-            chatInput.style.height = 'auto';
-            chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
+            chatInput.style.height = '24px';
+            chatInput.style.height = Math.max(24, Math.min(chatInput.scrollHeight, 140)) + 'px';
         });
     }
 });

@@ -1891,13 +1891,14 @@ footer {
     background: transparent !important;
     border: none !important;
     box-shadow: none !important;
-    padding: 4px 2px !important;
+    padding: 3px 2px !important;
     font-size: 0.78rem;
     color: white;
     outline: none !important;
     font-family: inherit;
     resize: none;
-    min-height: 22px;
+    height: 24px;
+    min-height: 24px;
     max-height: 140px;
     overflow-y: auto;
     line-height: 1.4;
