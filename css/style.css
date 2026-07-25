@@ -187,6 +187,7 @@ h4 {
     left: 50%;
     transform: translateX(-50%);
     z-index: 1000;
+    transition: left 0.3s ease;
 }
 
 .floating-dock__nav {
@@ -2460,6 +2461,10 @@ body.split-active {
 
 body.split-active .modal {
     width: calc(100vw - var(--chat-width, max(25vw, 300px)));
+}
+
+body.split-active .floating-dock {
+    left: calc((100vw - var(--chat-width, max(25vw, 300px))) / 2);
 }
 
 .chat-resize-handle {

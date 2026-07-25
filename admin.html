@@ -409,11 +409,19 @@
         async function fetchStats() {
             try {
                 const res = await fetch(`${API_BASE}/api/admin/stats`, { headers: { 'Authorization': `Bearer ${authToken}` } });
-                if (!res.ok) return false;
+                if (!res.ok) {
+                    const errData = await res.json().catch(() => ({}));
+                    document.getElementById('dash-subtitle').textContent = `Error loading data: ${errData.message || res.statusText || 'Connection failed'}`;
+                    return false;
+                }
                 const data = await res.json();
                 renderStats(data);
                 return true;
-            } catch (err) { console.error('Stats error:', err); return false; }
+            } catch (err) {
+                console.error('Stats error:', err);
+                document.getElementById('dash-subtitle').textContent = `Error loading data: ${err.message || 'Connection failed'}`;
+                return false;
+            }
         }
 
         function renderStats(data) {

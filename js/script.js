@@ -596,6 +596,8 @@ document.addEventListener('DOMContentLoaded', () => {
             startHeight = parseInt(document.defaultView.getComputedStyle(chatWidget).height, 10);
             
             chatWidget.style.transition = 'none'; // Prevent lag during resize
+            const floatingDock = document.querySelector('.floating-dock');
+            if (floatingDock) floatingDock.style.transition = 'none';
             
             document.documentElement.addEventListener('mousemove', doDrag, false);
             document.documentElement.addEventListener('mouseup', stopDrag, false);
@@ -624,6 +626,8 @@ document.addEventListener('DOMContentLoaded', () => {
         function stopDrag() {
             isResizing = false;
             chatWidget.style.transition = ''; // Restore transition
+            const floatingDock = document.querySelector('.floating-dock');
+            if (floatingDock) floatingDock.style.transition = '';
             document.documentElement.removeEventListener('mousemove', doDrag, false);
             document.documentElement.removeEventListener('mouseup', stopDrag, false);
         }

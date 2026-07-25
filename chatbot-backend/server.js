@@ -16,19 +16,40 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // ============================================================
-// MONGODB CONNECTION
+// MONGODB SERVERLESS CONNECTION MANAGER
 // ============================================================
-const MONGODB_URI = process.env.MONGODB_URI;
-if (MONGODB_URI) {
-    mongoose.connect(MONGODB_URI)
-        .then(() => console.log('✅ MongoDB connected'))
-        .catch(err => console.error('❌ MongoDB error:', err.message));
-} else if (process.env.NODE_ENV !== 'production') {
-    const localDb = ['mongodb://', '127.0.0.1:27017', '/portfolio_analytics'].join('');
-    mongoose.connect(localDb)
-        .then(() => console.log('✅ Local MongoDB connected'))
-        .catch(err => console.error('❌ Local MongoDB error:', err.message));
+let isConnected = false;
+
+async function connectDB() {
+    if (isConnected && mongoose.connection.readyState === 1) {
+        return true;
+    }
+    const uri = process.env.MONGODB_URI || (process.env.NODE_ENV !== 'production' ? 'mongodb://127.0.0.1:27017/portfolio_analytics' : null);
+    if (!uri) {
+        console.error('❌ MONGODB_URI is not set in environment variables');
+        return false;
+    }
+    try {
+        await mongoose.connect(uri, {
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+        isConnected = true;
+        console.log('✅ MongoDB connected successfully');
+        return true;
+    } catch (err) {
+        console.error('❌ MongoDB connection error:', err.message);
+        return false;
+    }
 }
+
+// Ensure DB is connected before handling any API request
+app.use(async (req, res, next) => {
+    if (req.path.startsWith('/api/')) {
+        await connectDB();
+    }
+    next();
+});
 
 // ============================================================
 // MONGODB SCHEMAS & MODELS
@@ -75,13 +96,11 @@ const adminSessions = new Map();
 // ---- Admin Auth Middleware ----
 function requireAdmin(req, res, next) {
     const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token || !adminSessions.has(token)) {
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Thari@1999';
+    const validToken = crypto.createHmac('sha256', adminPassword).update('admin-session').digest('hex');
+
+    if (!token || (token !== validToken && !adminSessions.has(token))) {
         return res.status(401).json({ message: 'Unauthorized' });
-    }
-    const session = adminSessions.get(token);
-    if (Date.now() - session.createdAt > 24 * 60 * 60 * 1000) {
-        adminSessions.delete(token);
-        return res.status(401).json({ message: 'Session expired' });
     }
     next();
 }
@@ -98,15 +117,13 @@ app.post('/api/track', async (req, res) => {
         await Visit.create({
             ip: ip.includes('.') ? ip.substring(0, ip.lastIndexOf('.')) + '.*' : ip.substring(0, 12) + '…',
             userAgent: userAgent.substring(0, 200),
-            page: req.body.page || '/',
+            page: req.body.page || '/home',
             referrer: referer.substring(0, 200)
         });
-
-        const totalViews = await Visit.countDocuments();
-        res.json({ success: true, views: totalViews });
+        res.json({ success: true });
     } catch (err) {
         console.error('Track error:', err.message);
-        res.json({ success: false });
+        res.status(500).json({ success: false });
     }
 });
 
@@ -138,7 +155,7 @@ app.post('/api/admin/login', (req, res) => {
     const adminPassword = process.env.ADMIN_PASSWORD || 'Thari@1999';
 
     if (password === adminPassword) {
-        const token = crypto.randomBytes(32).toString('hex');
+        const token = crypto.createHmac('sha256', adminPassword).update('admin-session').digest('hex');
         adminSessions.set(token, { createdAt: Date.now() });
 
         // Clean expired sessions
@@ -214,7 +231,7 @@ app.get('/api/admin/stats', requireAdmin, async (req, res) => {
         });
     } catch (err) {
         console.error('Stats error:', err.message);
-        res.status(500).json({ message: 'Failed to fetch stats' });
+        res.status(500).json({ message: 'Failed to fetch stats: ' + (err.message || err.toString()) });
     }
 });
 
@@ -225,7 +242,8 @@ app.get('/api/admin/messages', requireAdmin, async (req, res) => {
         const unreadCount = await ContactMessage.countDocuments({ read: false });
         res.json({ messages, unreadCount });
     } catch (err) {
-        res.status(500).json({ message: 'Failed to fetch messages' });
+        console.error('Messages error:', err.message);
+        res.status(500).json({ message: 'Failed to fetch messages: ' + (err.message || err.toString()) });
     }
 });
 
@@ -235,7 +253,8 @@ app.put('/api/admin/messages/:id/read', requireAdmin, async (req, res) => {
         await ContactMessage.findByIdAndUpdate(req.params.id, { read: true });
         res.json({ success: true });
     } catch (err) {
-        res.status(500).json({ message: 'Failed to update message' });
+        console.error('Read error:', err.message);
+        res.status(500).json({ message: 'Failed to update message: ' + (err.message || err.toString()) });
     }
 });
 
@@ -245,7 +264,8 @@ app.get('/api/admin/chats', requireAdmin, async (req, res) => {
         const chats = await ChatSession.find().sort({ updatedAt: -1 }).limit(50).lean();
         res.json({ chats });
     } catch (err) {
-        res.status(500).json({ message: 'Failed to fetch chats' });
+        console.error('Chats error:', err.message);
+        res.status(500).json({ message: 'Failed to fetch chats: ' + (err.message || err.toString()) });
     }
 });
 
