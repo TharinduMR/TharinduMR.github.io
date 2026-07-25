@@ -18,10 +18,83 @@ const MediaHandler = {
 
         this.fileInput.addEventListener('change', this.handleFileSelect.bind(this));
         this.removeBtn.addEventListener('click', this.clearFile.bind(this));
+
+        // Setup direct media/file paste support (Ctrl+V or Win+Shift+S screenshot paste)
+        const chatInput = document.getElementById('chat-input');
+        const chatWidget = document.getElementById('chat-widget');
+
+        const pasteHandler = (e) => {
+            const items = (e.clipboardData || e.originalEvent?.clipboardData)?.items;
+            if (!items) return;
+
+            for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.kind === 'file') {
+                    const file = item.getAsFile();
+                    if (file) {
+                        let fileName = file.name;
+                        if (!fileName || fileName === 'image.png' || fileName === 'blob' || fileName === 'clipboard.png') {
+                            const ext = item.type ? item.type.split('/')[1] || 'png' : 'png';
+                            fileName = `pasted_media_${Date.now()}.${ext}`;
+                            const renamedFile = new File([file], fileName, { type: file.type || 'image/png' });
+                            this.processFile(renamedFile);
+                        } else {
+                            this.processFile(file);
+                        }
+                        e.preventDefault();
+                        break;
+                    }
+                }
+            }
+        };
+
+        if (chatInput) {
+            chatInput.addEventListener('paste', pasteHandler);
+        }
+
+        // Also intercept paste events when chat widget is open/visible (even if input box isn't focused)
+        document.addEventListener('paste', (e) => {
+            if (e.target === chatInput) return; // already handled above
+            const isChatOpen = chatWidget && !chatWidget.classList.contains('hidden') && chatWidget.style.display !== 'none';
+            if (isChatOpen) {
+                // Ignore if user is pasting text/files into another form field (like contact form)
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+                pasteHandler(e);
+            }
+        });
+
+        // Setup drag & drop directly onto the chat input area
+        const chatInputBox = document.querySelector('.chat-input-box');
+        if (chatInputBox) {
+            chatInputBox.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                chatInputBox.style.borderColor = 'var(--accent-1)';
+                chatInputBox.style.background = 'rgba(0, 230, 118, 0.1)';
+            });
+            chatInputBox.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                chatInputBox.style.borderColor = '';
+                chatInputBox.style.background = '';
+            });
+            chatInputBox.addEventListener('drop', (e) => {
+                e.preventDefault();
+                chatInputBox.style.borderColor = '';
+                chatInputBox.style.background = '';
+                const file = e.dataTransfer?.files?.[0];
+                if (file) {
+                    this.processFile(file);
+                }
+            });
+        }
     },
 
     handleFileSelect(event) {
         const file = event.target.files[0];
+        if (!file) return;
+        this.processFile(file);
+    },
+
+    processFile(file) {
         if (!file) return;
 
         this.currentFile = file;
