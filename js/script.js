@@ -634,9 +634,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (chatToggle && chatWidget) {
+        function updateChatToggleIcon() {
+            const icon = chatToggle.querySelector('i');
+            if (!icon) return;
+            if (chatWidget.classList.contains('hidden')) {
+                icon.className = 'fa-solid fa-message';
+                chatToggle.setAttribute('data-cursor-text', 'Chat');
+                chatToggle.title = "Open AI Assistant";
+            } else {
+                icon.className = 'fa-solid fa-xmark';
+                chatToggle.setAttribute('data-cursor-text', 'Close');
+                chatToggle.title = "Close Chatbox";
+            }
+        }
+        updateChatToggleIcon();
+
         chatToggle.addEventListener('click', (e) => {
             e.stopPropagation();
             chatWidget.classList.toggle('hidden');
+            updateChatToggleIcon();
             if (!chatWidget.classList.contains('hidden')) {
                 chatInput.focus();
             }
@@ -644,6 +660,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         closeChat.addEventListener('click', () => {
             chatWidget.classList.add('hidden');
+            updateChatToggleIcon();
             if (isChatExpanded) {
                 isChatExpanded = false;
                 chatWidget.classList.remove('expanded');
@@ -700,6 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isChatPinned && !isChatExpanded && !chatWidget.classList.contains('hidden')) {
                 if (!chatWidget.contains(e.target) && !chatToggle.contains(e.target)) {
                     chatWidget.classList.add('hidden');
+                    updateChatToggleIcon();
                 }
             }
         });
