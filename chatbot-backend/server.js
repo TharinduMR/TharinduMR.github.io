@@ -424,12 +424,12 @@ app.post('/api/chat', async (req, res) => {
     let geminiModelsToTry = complexity === 'heavy' ? ['gemini-3.1-pro-preview', 'gemini-2.0-flash', 'gemini-flash-latest'] : ['gemini-2.0-flash', 'gemini-3.5-flash', 'gemini-flash-latest'];
 
     // Auto-select DeepSeek for coding tasks when auto is selected
-    if ((!selectedModel || selectedModel === 'auto') && codingTask) {
+    if ((!selectedModel || selectedModel === 'auto' || selectedModel === 'gemini-2.0-flash') && codingTask && process.env.DEEPSEEK_API_KEY) {
         forceDeepSeek = true;
         deepSeekModelOverride = complexity === 'heavy' ? 'deepseek-reasoner' : 'deepseek-chat';
         usedModelName = complexity === 'heavy' ? 'DeepSeek-R1 (Auto Coding)' : 'DeepSeek-V3 (Auto Coding)';
     } else {
-        usedModelName = complexity === 'heavy' ? 'Gemini Pro (Auto)' : 'Gemini Flash (Auto)';
+        usedModelName = complexity === 'heavy' ? 'Gemini 3.1 Pro (Fastest)' : 'Gemini 2.0 Flash (Fastest)';
     }
 
     if (selectedModel && selectedModel !== 'auto') {

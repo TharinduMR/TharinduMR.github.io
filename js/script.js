@@ -927,7 +927,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentModelName = document.getElementById('current-model-name');
         const modelOptions = document.querySelectorAll('.model-option');
 
-        window.selectedAiModel = 'auto';
+        window.selectedAiModel = 'gemini-2.0-flash';
 
         if (modelSelectorBtn && modelDropdownMenu) {
             modelSelectorBtn.addEventListener('click', (e) => {
@@ -953,7 +953,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     else if (model === 'gemini-3.6-flash') displayName = 'Gemini 3.6 Flash';
                     else if (model === 'gemini-2.5-pro') displayName = 'Gemini 2.5 Pro';
                     else if (model === 'gemini-2.5-flash') displayName = 'Gemini 2.5 Flash';
-                    else if (model === 'gemini-2.0-flash') displayName = 'Gemini 2.0 Flash';
+                    else if (model === 'gemini-2.0-flash') displayName = 'Gemini 2.0 Flash (Fastest)';
                     else if (model === 'gemini-flash-latest') displayName = 'Gemini 1.5 Flash (Free Tier)';
                     else if (model === 'glm-4-plus') displayName = 'GLM-4 Plus';
                     else if (model === 'glm-4') displayName = 'GLM-4 Pro';
