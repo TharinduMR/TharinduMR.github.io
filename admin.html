@@ -336,6 +336,7 @@
                         <div class="info-row"><span class="info-row-label">Gemini 3.6 Flash</span><span class="info-row-value" id="ai-gemini-3.6-flash"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">Gemini 3.1 Pro</span><span class="info-row-value" id="ai-gemini-3.1-pro-preview"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">Gemini Flash Latest</span><span class="info-row-value" id="ai-gemini-flash-latest"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">Gemini Imagen 3</span><span class="info-row-value" id="ai-gemini-2.0-flash-preview-image-generation"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 700;"><i class="fa-solid fa-brain" style="color: #06b6d4;"></i> DeepSeek</div>
                         <div class="info-row"><span class="info-row-label">DeepSeek-V3 Chat</span><span class="info-row-value" id="ai-deepseek-chat"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">DeepSeek-R1 Reasoner</span><span class="info-row-value" id="ai-deepseek-reasoner"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
@@ -833,7 +834,7 @@
                 if (!window.aiTested && data.aiConfig) {
                     // Set initial "Configured" / "Not Configured" for all models
                     const allModelKeys = [
-                        'gemini-2.0-flash', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.1-pro-preview', 'gemini-flash-latest',
+                        'gemini-2.0-flash', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.1-pro-preview', 'gemini-flash-latest', 'gemini-2.0-flash-preview-image-generation',
                         'deepseek-chat', 'deepseek-reasoner', 'deepseek-coder',
                         'glm-4-flash', 'glm-4-plus', 'glm-4', 'glm-4-air', 'glm-4-long'
                     ];
@@ -860,11 +861,11 @@
 
         async function testAIServers() {
             const btn = document.getElementById('test-ai-btn');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing 13 models...'; }
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing 14 models...'; }
 
             // Set all badges to spinning
             const allIds = [
-                'ai-gemini-2.0-flash', 'ai-gemini-3.5-flash', 'ai-gemini-3.6-flash', 'ai-gemini-3.1-pro-preview', 'ai-gemini-flash-latest',
+                'ai-gemini-2.0-flash', 'ai-gemini-3.5-flash', 'ai-gemini-3.6-flash', 'ai-gemini-3.1-pro-preview', 'ai-gemini-flash-latest', 'ai-gemini-2.0-flash-preview-image-generation',
                 'ai-deepseek-chat', 'ai-deepseek-reasoner', 'ai-deepseek-coder',
                 'ai-glm-4-flash', 'ai-glm-4-plus', 'ai-glm-4', 'ai-glm-4-air', 'ai-glm-4-long'
             ];

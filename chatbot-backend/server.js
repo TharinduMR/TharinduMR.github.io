@@ -333,7 +333,8 @@ app.post('/api/admin/test-ai', requireAdmin, async (req, res) => {
         { key: 'gemini-3.5-flash',       label: 'Gemini 3.5 Flash' },
         { key: 'gemini-3.6-flash',       label: 'Gemini 3.6 Flash' },
         { key: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
-        { key: 'gemini-flash-latest',    label: 'Gemini Flash Latest' }
+        { key: 'gemini-flash-latest',    label: 'Gemini Flash Latest' },
+        { key: 'gemini-2.0-flash-preview-image-generation', label: 'Gemini Imagen 3' }
     ];
 
     if (!process.env.GEMINI_API_KEY) {
@@ -560,6 +561,31 @@ function isCodingTask(message) {
     ];
     return codingKeywords.some(kw => text.includes(kw));
 }
+// Helper: Image Generation Request Detector
+function isImageGenerationRequest(message) {
+    const text = (message || '').toLowerCase();
+    const imageGenPatterns = [
+        'generate an image', 'generate image', 'generate a image',
+        'create an image', 'create image', 'create a image',
+        'make an image', 'make image', 'make a image',
+        'draw me', 'draw a ', 'draw an ', 'draw the ',
+        'generate a picture', 'generate picture', 'create a picture', 'create picture',
+        'make a picture', 'make picture',
+        'generate a photo', 'create a photo', 'make a photo',
+        'design a logo', 'design logo', 'create a logo',
+        'illustrate', 'paint a', 'paint an', 'paint the',
+        'generate art', 'create art', 'make art',
+        'make me a', 'create me a', 'generate me a',
+        'can you draw', 'can you create an image', 'can you generate an image',
+        'can you make an image', 'please draw', 'please generate an image',
+        'image of', 'picture of', 'photo of',
+        'visualize', 'render an image', 'render a',
+        'sketch a', 'sketch an', 'sketch the'
+    ];
+    // Must match at least one pattern AND not be asking about image analysis
+    const isAnalysis = text.includes('what is this') || text.includes('analyze this') || text.includes('describe this image');
+    return !isAnalysis && imageGenPatterns.some(p => text.includes(p));
+}
 
 // ============================================================
 // AI CHATBOT ENDPOINT (Gemini Primary + Zhipu Fallback + Attribution)
@@ -612,6 +638,145 @@ app.post('/api/chat', async (req, res) => {
     let usedModelName = '';
     let geminiSuccess = false;
     let deepseekSuccess = false;
+
+    // ============================================================
+    // IMAGE GENERATION (intercept before normal text generation)
+    // ============================================================
+    if (isImageGenerationRequest(userMessage)) {
+        let imageGenSuccess = false;
+
+        // --- PRIMARY: Gemini Imagen 3 ---
+        const geminiKey = process.env.GEMINI_API_KEY;
+        if (geminiKey && geminiKey.trim() !== '') {
+            try {
+                const { GoogleGenerativeAI } = require('@google/generative-ai');
+                const genAI = new GoogleGenerativeAI(geminiKey);
+                const model = genAI.getGenerativeModel({
+                    model: 'gemini-2.0-flash-preview-image-generation',
+                    generationConfig: {
+                        responseModalities: ['TEXT', 'IMAGE']
+                    }
+                });
+
+                const prompt = userMessage;
+                const result = await model.generateContent(prompt);
+                const response = result.response;
+
+                usedModelName = 'Gemini Imagen 3';
+
+                // Extract text and image parts from the response
+                if (response.candidates && response.candidates[0] && response.candidates[0].content) {
+                    const parts = response.candidates[0].content.parts || [];
+
+                    for (const part of parts) {
+                        if (part.text) {
+                            fullReply += part.text;
+                            res.write(`data: ${JSON.stringify({ chunk: part.text })}\n\n`);
+                        }
+                        if (part.inlineData) {
+                            const mimeType = part.inlineData.mimeType || 'image/png';
+                            const base64Data = part.inlineData.data;
+                            const dataUrl = `data:${mimeType};base64,${base64Data}`;
+                            res.write(`data: ${JSON.stringify({ image: dataUrl })}\n\n`);
+                            fullReply += '\n[Generated Image]\n';
+                            imageGenSuccess = true;
+                        }
+                    }
+                }
+
+                if (!imageGenSuccess && fullReply) {
+                    // Gemini returned text but no image — still counts as success
+                    imageGenSuccess = true;
+                }
+
+            } catch (geminiImgErr) {
+                console.warn('Gemini Imagen error:', geminiImgErr.message?.substring(0, 150));
+            }
+        }
+
+        // --- FALLBACK: Zhipu CogView-3 ---
+        if (!imageGenSuccess) {
+            try {
+                const zhipuKey = process.env.ZHIPU_API_KEY || process.env.DEEPSEEK_API_KEY;
+                if (zhipuKey) {
+                    const OpenAI = require('openai');
+                    const openai = new OpenAI({
+                        apiKey: zhipuKey,
+                        baseURL: 'https://open.bigmodel.cn/api/paas/v4/'
+                    });
+
+                    const captionText = '🎨 Generating image with CogView-3...\n\n';
+                    res.write(`data: ${JSON.stringify({ chunk: captionText })}\n\n`);
+
+                    const imageResponse = await openai.images.generate({
+                        model: 'cogview-3-flash',
+                        prompt: userMessage,
+                        size: '1024x1024'
+                    });
+
+                    if (imageResponse.data && imageResponse.data[0]) {
+                        const imageUrl = imageResponse.data[0].url;
+                        // Fetch the image and convert to base64 for inline display
+                        const https = require('https');
+                        const http = require('http');
+                        const fetchModule = imageUrl.startsWith('https') ? https : http;
+
+                        const imgBase64 = await new Promise((resolve, reject) => {
+                            fetchModule.get(imageUrl, (imgRes) => {
+                                const chunks = [];
+                                imgRes.on('data', chunk => chunks.push(chunk));
+                                imgRes.on('end', () => {
+                                    const buffer = Buffer.concat(chunks);
+                                    const contentType = imgRes.headers['content-type'] || 'image/png';
+                                    resolve(`data:${contentType};base64,${buffer.toString('base64')}`);
+                                });
+                                imgRes.on('error', reject);
+                            }).on('error', reject);
+                        });
+
+                        res.write(`data: ${JSON.stringify({ image: imgBase64 })}\n\n`);
+                        usedModelName = 'Zhipu CogView-3 Flash';
+                        fullReply = captionText + '[Generated Image]\n';
+                        imageGenSuccess = true;
+                    }
+                }
+            } catch (cogErr) {
+                console.warn('CogView-3 fallback error:', cogErr.message?.substring(0, 150));
+            }
+        }
+
+        // If image generation succeeded, skip normal text flow
+        if (imageGenSuccess) {
+            // Model attribution
+            if (usedModelName) {
+                const attributionStr = `\n\n<span class="model-attribution">Generated by ${usedModelName}</span>`;
+                fullReply += attributionStr;
+                res.write(`data: ${JSON.stringify({ chunk: attributionStr })}\n\n`);
+            }
+            res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
+            res.end();
+
+            // Save to chat history
+            try {
+                let chatSession = await ChatSession.findOne({ sessionId });
+                if (!chatSession) chatSession = new ChatSession({ sessionId, ip, messages: [] });
+                chatSession.messages.push({ role: 'user', content: userMessage });
+                chatSession.messages.push({ role: 'bot', content: fullReply });
+                chatSession.updatedAt = new Date();
+                await chatSession.save();
+            } catch (dbErr) { console.error('Chat DB save error:', dbErr.message); }
+
+            return; // Exit — skip normal text generation
+        }
+
+        // If image gen failed completely, fall through to normal text generation
+        console.warn('Image generation failed for both providers. Falling through to text generation...');
+        fullReply = '';
+    }
+
+    // ============================================================
+    // NORMAL TEXT GENERATION (Gemini + DeepSeek + Zhipu)
+    // ============================================================
 
     let forceZhipu = false;
     let forceDeepSeek = false;

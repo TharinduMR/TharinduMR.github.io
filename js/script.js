@@ -820,6 +820,41 @@ document.addEventListener('DOMContentLoaded', () => {
                                     botMsgDiv.innerText = fullReply;
                                     chatBox.scrollTop = chatBox.scrollHeight;
                                 }
+                                if (parsed.image) {
+                                    // Render any accumulated text before the image
+                                    if (fullReply.trim()) {
+                                        const textPart = document.createElement('div');
+                                        textPart.className = 'chat-img-caption';
+                                        textPart.textContent = fullReply.replace('[Generated Image]', '').trim();
+                                        botMsgDiv.innerHTML = '';
+                                        botMsgDiv.appendChild(textPart);
+                                    } else {
+                                        botMsgDiv.innerHTML = '';
+                                    }
+
+                                    // Create image container
+                                    const imgContainer = document.createElement('div');
+                                    imgContainer.className = 'chat-generated-img-container';
+
+                                    const img = document.createElement('img');
+                                    img.src = parsed.image;
+                                    img.alt = 'AI Generated Image';
+                                    img.className = 'chat-generated-img';
+                                    img.loading = 'lazy';
+                                    imgContainer.appendChild(img);
+
+                                    // Download button
+                                    const dlBtn = document.createElement('a');
+                                    dlBtn.href = parsed.image;
+                                    dlBtn.download = 'generated-image-' + Date.now() + '.png';
+                                    dlBtn.className = 'chat-img-download-btn';
+                                    dlBtn.innerHTML = '<i class="fa-solid fa-download"></i> Download Image';
+                                    imgContainer.appendChild(dlBtn);
+
+                                    botMsgDiv.appendChild(imgContainer);
+                                    fullReply += '\n[Generated Image]\n';
+                                    chatBox.scrollTop = chatBox.scrollHeight;
+                                }
                                 if (parsed.error) {
                                     botMsgDiv.style.color = '#ff4444';
                                     botMsgDiv.innerText = 'Error: ' + parsed.error;
