@@ -334,7 +334,7 @@ app.post('/api/admin/test-ai', requireAdmin, async (req, res) => {
         { key: 'gemini-3.6-flash',       label: 'Gemini 3.6 Flash' },
         { key: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
         { key: 'gemini-flash-latest',    label: 'Gemini Flash Latest' },
-        { key: 'gemini-2.0-flash-preview-image-generation', label: 'Gemini Imagen 3' }
+        { key: 'gemini-2.5-flash-image', label: 'Gemini Imagen 3' }
     ];
 
     if (!process.env.GEMINI_API_KEY) {
@@ -652,9 +652,9 @@ app.post('/api/chat', async (req, res) => {
                 const { GoogleGenerativeAI } = require('@google/generative-ai');
                 const genAI = new GoogleGenerativeAI(geminiKey);
                 const model = genAI.getGenerativeModel({
-                    model: 'gemini-2.0-flash-preview-image-generation',
+                    model: 'gemini-2.5-flash-image',
                     generationConfig: {
-                        responseModalities: ['TEXT', 'IMAGE']
+                        responseModalities: ['image']
                     }
                 });
 
@@ -674,7 +674,7 @@ app.post('/api/chat', async (req, res) => {
                             res.write(`data: ${JSON.stringify({ chunk: part.text })}\n\n`);
                         }
                         if (part.inlineData) {
-                            const mimeType = part.inlineData.mimeType || 'image/png';
+                            const mimeType = part.inlineData.mimeType || 'image/jpeg';
                             const base64Data = part.inlineData.data;
                             const dataUrl = `data:${mimeType};base64,${base64Data}`;
                             res.write(`data: ${JSON.stringify({ image: dataUrl })}\n\n`);
@@ -716,25 +716,7 @@ app.post('/api/chat', async (req, res) => {
 
                     if (imageResponse.data && imageResponse.data[0]) {
                         const imageUrl = imageResponse.data[0].url;
-                        // Fetch the image and convert to base64 for inline display
-                        const https = require('https');
-                        const http = require('http');
-                        const fetchModule = imageUrl.startsWith('https') ? https : http;
-
-                        const imgBase64 = await new Promise((resolve, reject) => {
-                            fetchModule.get(imageUrl, (imgRes) => {
-                                const chunks = [];
-                                imgRes.on('data', chunk => chunks.push(chunk));
-                                imgRes.on('end', () => {
-                                    const buffer = Buffer.concat(chunks);
-                                    const contentType = imgRes.headers['content-type'] || 'image/png';
-                                    resolve(`data:${contentType};base64,${buffer.toString('base64')}`);
-                                });
-                                imgRes.on('error', reject);
-                            }).on('error', reject);
-                        });
-
-                        res.write(`data: ${JSON.stringify({ image: imgBase64 })}\n\n`);
+                        res.write(`data: ${JSON.stringify({ image: imageUrl })}\n\n`);
                         usedModelName = 'Zhipu CogView-3 Flash';
                         fullReply = captionText + '[Generated Image]\n';
                         imageGenSuccess = true;
