@@ -665,7 +665,44 @@ app.post('/api/chat', async (req, res) => {
 
         } catch (zhipuErr) {
             console.error('Zhipu Fallback API Error:', zhipuErr.message);
-            if (!res.headersSent) {
+            if (!deepseekSuccess && process.env.DEEPSEEK_API_KEY) {
+                try {
+                    console.log('Trying DeepSeek as final fallback...');
+                    const OpenAI = require('openai');
+                    const openai = new OpenAI({
+                        apiKey: process.env.DEEPSEEK_API_KEY,
+                        baseURL: "https://api.deepseek.com"
+                    });
+                    const dsModel = 'deepseek-chat';
+                    let messagesPayload = [{ role: "system", content: fullInstruction }];
+                    messagesPayload = messagesPayload.concat(sessionHistories[sessionId].deepseek || []);
+                    const dsContent = typeof parsedMedia.finalMessage === 'string' ? parsedMedia.finalMessage : String(userMessage);
+                    messagesPayload.push({ role: "user", content: dsContent });
+                    const stream = await openai.chat.completions.create({
+                        model: dsModel,
+                        messages: messagesPayload,
+                        stream: true,
+                        temperature: 0.2,
+                        max_tokens: 4096
+                    });
+                    usedModelName = 'DeepSeek-V3 (Final Fallback)';
+                    for await (const chunk of stream) {
+                        const text = chunk.choices[0]?.delta?.content || "";
+                        fullReply += text;
+                        if (text) {
+                            res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+                        }
+                    }
+                    deepseekSuccess = true;
+                    sessionHistories[sessionId].deepseek.push({ role: 'user', content: dsContent });
+                    sessionHistories[sessionId].deepseek.push({ role: 'assistant', content: fullReply });
+                } catch (finalErr) {
+                    console.error('Final DeepSeek Fallback Error:', finalErr.message);
+                    if (!res.headersSent) {
+                        return res.status(500).json({ reply: 'Sorry, I am having trouble connecting to AI services right now.' });
+                    }
+                }
+            } else if (!res.headersSent) {
                 return res.status(500).json({ reply: 'Sorry, I am having trouble connecting to AI services right now.' });
             }
         }

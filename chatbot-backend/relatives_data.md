@@ -38,7 +38,7 @@
 - **Visual Characteristics**: [Add visual notes/description to assist AI visual recognition]
 
 ### Other Relatives
-- **Relationship**: Relative / Extended Family Member
-- **Name & Details**: [Add names and details of other relatives here]
-- **Reference Image File**: `media/relative.jpg` (or `media/images/relative.jpg`)
-- **Visual Characteristics**: [Add visual notes/description to assist AI visual recognition]
+- **Relationship**: girlfriend
+- **Name & Details**: She is Rukshika Liyanage. She is GIS specialist graduated from University of Peradeniya. 
+- **Reference Image File**: `media/images/relatives/rukshika1.jpg` , `media/images/relatives/rukshika2.jpeg` , `media/images/relatives/rukshika3.jpeg`
+- **Visual Characteristics**: 

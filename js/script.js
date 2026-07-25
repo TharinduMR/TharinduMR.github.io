@@ -777,7 +777,16 @@ document.addEventListener('DOMContentLoaded', () => {
                     body: JSON.stringify(payload)
                 });
 
-                if (!response.ok) throw new Error('Network response was not ok');
+                if (!response.ok) {
+                    let errMessage = 'Could not reach the AI server. Please make sure the backend is running.';
+                    try {
+                        const errData = await response.json();
+                        if (errData.reply || errData.message || errData.error) {
+                            errMessage = errData.reply || errData.message || errData.error;
+                        }
+                    } catch (e) {}
+                    throw new Error(errMessage);
+                }
 
                 // Remove typing indicator and create bot message div
                 const typingEl = document.getElementById(typingId);
@@ -906,7 +915,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const typingEl = document.getElementById(typingId);
                 if (typingEl) typingEl.remove();
 
-                chatBox.innerHTML += `<div class="message bot-msg" style="color: #ff4444;">Error: Could not reach the AI server. Please make sure the backend is running.</div>`;
+                const displayErr = error.message && error.message !== 'Failed to fetch' && error.message !== 'Network response was not ok' ? error.message : 'Could not reach the AI server. Please make sure the backend is running.';
+                chatBox.innerHTML += `<div class="message bot-msg" style="color: #ff4444;">Error: ${displayErr}</div>`;
                 chatBox.scrollTop = chatBox.scrollHeight;
             }
         }
