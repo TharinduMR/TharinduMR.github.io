@@ -325,61 +325,93 @@ app.post('/api/admin/test-ai', requireAdmin, async (req, res) => {
     const { GoogleGenerativeAI } = require('@google/generative-ai');
     const OpenAI = require('openai');
 
-    const results = {
-        gemini: { status: "Testing...", ok: false, message: "" },
-        deepseek: { status: "Testing...", ok: false, message: "" },
-        zhipu: { status: "Testing...", ok: false, message: "" }
-    };
+    const results = {};
 
-    // Test Gemini
-    try {
-        if (!process.env.GEMINI_API_KEY) {
-            results.gemini = { status: "No API Key", ok: false, message: "GEMINI_API_KEY not set in .env" };
-        } else {
-            const start = Date.now();
-            const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-            await model.generateContent({ contents: [{ role: "user", parts: [{ text: "ping" }] }] });
-            results.gemini = { status: `200 OK (${Date.now() - start}ms)`, ok: true, message: "Gemini 2.0 Flash responded instantly." };
+    // --- Gemini Models ---
+    const geminiModels = [
+        { key: 'gemini-2.0-flash',       label: 'Gemini 2.0 Flash' },
+        { key: 'gemini-3.5-flash',       label: 'Gemini 3.5 Flash' },
+        { key: 'gemini-3.6-flash',       label: 'Gemini 3.6 Flash' },
+        { key: 'gemini-3.1-pro-preview', label: 'Gemini 3.1 Pro' },
+        { key: 'gemini-flash-latest',    label: 'Gemini Flash Latest' }
+    ];
+
+    if (!process.env.GEMINI_API_KEY) {
+        for (const m of geminiModels) {
+            results[m.key] = { status: 'No API Key', ok: false, message: 'GEMINI_API_KEY not set in .env', label: m.label, provider: 'google' };
         }
-    } catch (e) {
-        const msg = e.message || e.toString();
-        if (msg.includes("429")) results.gemini = { status: "429 Rate Limit Hit", ok: false, message: "Free tier per-minute limit exceeded. Please wait 60s." };
-        else if (msg.includes("404")) results.gemini = { status: "404 Not Found", ok: false, message: "Model endpoint deprecated." };
-        else results.gemini = { status: "Error: " + msg.substring(0, 25), ok: false, message: msg.substring(0, 120) };
+    } else {
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        for (const m of geminiModels) {
+            try {
+                const start = Date.now();
+                const model = genAI.getGenerativeModel({ model: m.key });
+                await model.generateContent({ contents: [{ role: 'user', parts: [{ text: 'ping' }] }] });
+                results[m.key] = { status: `200 OK (${Date.now() - start}ms)`, ok: true, message: `${m.label} responded.`, label: m.label, provider: 'google' };
+            } catch (e) {
+                const msg = e.message || e.toString();
+                if (msg.includes('429')) results[m.key] = { status: '429 Rate Limit', ok: false, message: 'Per-minute limit exceeded. Wait 60s.', label: m.label, provider: 'google' };
+                else if (msg.includes('404')) results[m.key] = { status: '404 Not Found', ok: false, message: 'Model not available or deprecated.', label: m.label, provider: 'google' };
+                else results[m.key] = { status: 'Error', ok: false, message: msg.substring(0, 120), label: m.label, provider: 'google' };
+            }
+        }
     }
 
-    // Test DeepSeek
-    try {
-        if (!process.env.DEEPSEEK_API_KEY) {
-            results.deepseek = { status: "No API Key", ok: false, message: "DEEPSEEK_API_KEY not set in .env" };
-        } else {
-            const start = Date.now();
-            const dsOpenai = new OpenAI({ apiKey: process.env.DEEPSEEK_API_KEY, baseURL: 'https://api.deepseek.com' });
-            await dsOpenai.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: "ping" }], max_tokens: 5 });
-            results.deepseek = { status: `200 OK (${Date.now() - start}ms)`, ok: true, message: "DeepSeek API active." };
+    // --- DeepSeek Models ---
+    const deepseekModels = [
+        { key: 'deepseek-chat',     label: 'DeepSeek-V3 Chat' },
+        { key: 'deepseek-reasoner', label: 'DeepSeek-R1 Reasoner' },
+        { key: 'deepseek-coder',    label: 'DeepSeek Coder' }
+    ];
+
+    if (!process.env.DEEPSEEK_API_KEY) {
+        for (const m of deepseekModels) {
+            results[m.key] = { status: 'No API Key', ok: false, message: 'DEEPSEEK_API_KEY not set in .env', label: m.label, provider: 'deepseek' };
         }
-    } catch (e) {
-        const msg = e.message || e.toString();
-        if (msg.includes("402")) results.deepseek = { status: "402 Zero Balance ($0)", ok: false, message: "DeepSeek API credit balance is $0.00. Please top up account." };
-        else results.deepseek = { status: "Error: " + msg.substring(0, 25), ok: false, message: msg.substring(0, 120) };
+    } else {
+        const dsOpenai = new OpenAI({ apiKey: process.env.DEEPSEEK_API_KEY, baseURL: 'https://api.deepseek.com' });
+        for (const m of deepseekModels) {
+            try {
+                const start = Date.now();
+                await dsOpenai.chat.completions.create({ model: m.key, messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 });
+                results[m.key] = { status: `200 OK (${Date.now() - start}ms)`, ok: true, message: `${m.label} active.`, label: m.label, provider: 'deepseek' };
+            } catch (e) {
+                const msg = e.message || e.toString();
+                if (msg.includes('402')) results[m.key] = { status: '402 No Balance', ok: false, message: 'Credit balance $0.00. Top up account.', label: m.label, provider: 'deepseek' };
+                else if (msg.includes('404')) results[m.key] = { status: '404 Not Found', ok: false, message: 'Model not available.', label: m.label, provider: 'deepseek' };
+                else results[m.key] = { status: 'Error', ok: false, message: msg.substring(0, 120), label: m.label, provider: 'deepseek' };
+            }
+        }
     }
 
-    // Test Zhipu
-    try {
-        const zhipuKey = process.env.ZHIPU_API_KEY || process.env.DEEPSEEK_API_KEY;
-        if (!zhipuKey) {
-            results.zhipu = { status: "No API Key", ok: false, message: "ZHIPU_API_KEY not set in .env" };
-        } else {
-            const start = Date.now();
-            const zpOpenai = new OpenAI({ apiKey: zhipuKey, baseURL: 'https://open.bigmodel.cn/api/paas/v4/' });
-            await zpOpenai.chat.completions.create({ model: "glm-4-flash", messages: [{ role: "user", content: "ping" }], max_tokens: 5 });
-            results.zhipu = { status: `200 OK (${Date.now() - start}ms)`, ok: true, message: "Zhipu GLM-4 Flash API active." };
+    // --- Zhipu Models ---
+    const zhipuModels = [
+        { key: 'glm-4-flash', label: 'GLM-4 Flash' },
+        { key: 'glm-4-plus',  label: 'GLM-4 Plus' },
+        { key: 'glm-4',       label: 'GLM-4 Pro' },
+        { key: 'glm-4-air',   label: 'GLM-4 Air' },
+        { key: 'glm-4-long',  label: 'GLM-4 Long' }
+    ];
+
+    const zhipuKey = process.env.ZHIPU_API_KEY || process.env.DEEPSEEK_API_KEY;
+    if (!zhipuKey) {
+        for (const m of zhipuModels) {
+            results[m.key] = { status: 'No API Key', ok: false, message: 'ZHIPU_API_KEY not set in .env', label: m.label, provider: 'zhipu' };
         }
-    } catch (e) {
-        const msg = e.message || e.toString();
-        if (msg.includes("400")) results.zhipu = { status: "400 Bad Request", ok: false, message: msg.substring(0, 120) };
-        else results.zhipu = { status: "Error: " + msg.substring(0, 25), ok: false, message: msg.substring(0, 120) };
+    } else {
+        const zpOpenai = new OpenAI({ apiKey: zhipuKey, baseURL: 'https://open.bigmodel.cn/api/paas/v4/' });
+        for (const m of zhipuModels) {
+            try {
+                const start = Date.now();
+                await zpOpenai.chat.completions.create({ model: m.key, messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 });
+                results[m.key] = { status: `200 OK (${Date.now() - start}ms)`, ok: true, message: `${m.label} active.`, label: m.label, provider: 'zhipu' };
+            } catch (e) {
+                const msg = e.message || e.toString();
+                if (msg.includes('400')) results[m.key] = { status: '400 Bad Request', ok: false, message: msg.substring(0, 120), label: m.label, provider: 'zhipu' };
+                else if (msg.includes('404')) results[m.key] = { status: '404 Not Found', ok: false, message: 'Model not available.', label: m.label, provider: 'zhipu' };
+                else results[m.key] = { status: 'Error', ok: false, message: msg.substring(0, 120), label: m.label, provider: 'zhipu' };
+            }
+        }
     }
 
     res.json({ success: true, results });

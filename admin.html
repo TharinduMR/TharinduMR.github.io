@@ -327,13 +327,27 @@
                 <div class="section-card glass">
                     <div class="section-title" style="justify-content: space-between;">
                         <span><i class="fa-solid fa-microchip"></i> AI Server & Token Health</span>
-                        <button class="mark-read-btn" onclick="testAIServers()" id="test-ai-btn" style="padding: 4px 10px;"><i class="fa-solid fa-bolt"></i> Test Connections</button>
+                        <button class="mark-read-btn" onclick="testAIServers()" id="test-ai-btn" style="padding: 4px 10px;"><i class="fa-solid fa-bolt"></i> Test All Models</button>
                     </div>
-                    <div class="live-info">
-                        <div class="info-row"><span class="info-row-label">Google Gemini 2.0 Flash</span><span class="info-row-value" id="ai-status-gemini"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
-                        <div class="info-row"><span class="info-row-label">DeepSeek-V3 API</span><span class="info-row-value" id="ai-status-deepseek"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
-                        <div class="info-row"><span class="info-row-label">Zhipu GLM-4 Flash</span><span class="info-row-value" id="ai-status-zhipu"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
-                        <div class="info-row"><span class="info-row-label">Backend Node.js & Memory</span><span class="info-row-value" id="sys-status-node">—</span></div>
+                    <div class="live-info" id="ai-health-container">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 4px 0 6px; font-weight: 700;"><i class="fa-brands fa-google" style="color: #4285f4;"></i> Google Gemini</div>
+                        <div class="info-row"><span class="info-row-label">Gemini 2.0 Flash</span><span class="info-row-value" id="ai-gemini-2.0-flash"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">Gemini 3.5 Flash</span><span class="info-row-value" id="ai-gemini-3.5-flash"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">Gemini 3.6 Flash</span><span class="info-row-value" id="ai-gemini-3.6-flash"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">Gemini 3.1 Pro</span><span class="info-row-value" id="ai-gemini-3.1-pro-preview"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">Gemini Flash Latest</span><span class="info-row-value" id="ai-gemini-flash-latest"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 700;"><i class="fa-solid fa-brain" style="color: #06b6d4;"></i> DeepSeek</div>
+                        <div class="info-row"><span class="info-row-label">DeepSeek-V3 Chat</span><span class="info-row-value" id="ai-deepseek-chat"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">DeepSeek-R1 Reasoner</span><span class="info-row-value" id="ai-deepseek-reasoner"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">DeepSeek Coder</span><span class="info-row-value" id="ai-deepseek-coder"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 700;"><i class="fa-solid fa-globe" style="color: #f59e0b;"></i> Zhipu AI</div>
+                        <div class="info-row"><span class="info-row-label">GLM-4 Flash</span><span class="info-row-value" id="ai-glm-4-flash"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">GLM-4 Plus</span><span class="info-row-value" id="ai-glm-4-plus"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">GLM-4 Pro</span><span class="info-row-value" id="ai-glm-4"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">GLM-4 Air</span><span class="info-row-value" id="ai-glm-4-air"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">GLM-4 Long</span><span class="info-row-value" id="ai-glm-4-long"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 700;"><i class="fa-solid fa-server" style="color: var(--accent);"></i> Backend</div>
+                        <div class="info-row"><span class="info-row-label">Node.js & Memory</span><span class="info-row-value" id="sys-status-node">—</span></div>
                     </div>
                 </div>
                 <div class="section-card glass">
@@ -817,9 +831,21 @@
 
                 // Update initial AI badge configs if not tested yet
                 if (!window.aiTested && data.aiConfig) {
-                    updateAiBadge('ai-status-gemini', data.aiConfig.gemini.status === 'Configured', data.aiConfig.gemini.status);
-                    updateAiBadge('ai-status-deepseek', data.aiConfig.deepseek.status === 'Configured', data.aiConfig.deepseek.status);
-                    updateAiBadge('ai-status-zhipu', data.aiConfig.zhipu.status === 'Configured', data.aiConfig.zhipu.status);
+                    // Set initial "Configured" / "Not Configured" for all models
+                    const allModelKeys = [
+                        'gemini-2.0-flash', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.1-pro-preview', 'gemini-flash-latest',
+                        'deepseek-chat', 'deepseek-reasoner', 'deepseek-coder',
+                        'glm-4-flash', 'glm-4-plus', 'glm-4', 'glm-4-air', 'glm-4-long'
+                    ];
+                    for (const key of allModelKeys) {
+                        let providerCfg = null;
+                        if (key.startsWith('gemini') || key.startsWith('gemini-flash')) providerCfg = data.aiConfig.gemini;
+                        else if (key.startsWith('deepseek')) providerCfg = data.aiConfig.deepseek;
+                        else if (key.startsWith('glm')) providerCfg = data.aiConfig.zhipu;
+                        if (providerCfg) {
+                            updateAiBadge('ai-' + key, providerCfg.status === 'Configured', providerCfg.status);
+                        }
+                    }
                 }
             } catch (err) { console.error('System health error:', err); }
         }
@@ -834,25 +860,34 @@
 
         async function testAIServers() {
             const btn = document.getElementById('test-ai-btn');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...'; }
-            document.getElementById('ai-status-gemini').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Pinging Gemini...';
-            document.getElementById('ai-status-deepseek').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Pinging DeepSeek...';
-            document.getElementById('ai-status-zhipu').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Pinging GLM-4...';
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing 13 models...'; }
+
+            // Set all badges to spinning
+            const allIds = [
+                'ai-gemini-2.0-flash', 'ai-gemini-3.5-flash', 'ai-gemini-3.6-flash', 'ai-gemini-3.1-pro-preview', 'ai-gemini-flash-latest',
+                'ai-deepseek-chat', 'ai-deepseek-reasoner', 'ai-deepseek-coder',
+                'ai-glm-4-flash', 'ai-glm-4-plus', 'ai-glm-4', 'ai-glm-4-air', 'ai-glm-4-long'
+            ];
+            allIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Pinging...';
+            });
+
             try {
                 const res = await fetch(`${API_BASE}/api/admin/test-ai`, { method: 'POST', headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' } });
                 const data = await res.json();
                 if (data.success && data.results) {
                     window.aiTested = true;
-                    const r = data.results;
-                    updateAiBadge('ai-status-gemini', r.gemini.ok, r.gemini.status, !r.gemini.ok && r.gemini.status.includes('429'));
-                    updateAiBadge('ai-status-deepseek', r.deepseek.ok, r.deepseek.status, !r.deepseek.ok && r.deepseek.status.includes('402'));
-                    updateAiBadge('ai-status-zhipu', r.zhipu.ok, r.zhipu.status);
+                    for (const [modelKey, info] of Object.entries(data.results)) {
+                        const isWarn = !info.ok && (info.status.includes('429') || info.status.includes('402'));
+                        updateAiBadge('ai-' + modelKey, info.ok, info.status, isWarn);
+                    }
                 }
             } catch (err) {
                 console.error('Test AI error:', err);
                 showModalAlert('Connection Failed', 'Failed to connect to AI test endpoint.', true);
             } finally {
-                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Test Connections'; }
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Test All Models'; }
             }
         }
 
