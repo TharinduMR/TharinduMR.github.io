@@ -168,6 +168,27 @@
         .status-badge.online { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
         .status-badge.error { background: rgba(244,63,94,0.15); color: var(--danger); border: 1px solid rgba(244,63,94,0.3); }
         .status-badge.warning { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
+        .stat-card.red .stat-val { color: var(--danger); }
+        .stat-card.red .stat-icon { background: rgba(244,63,94,0.1); color: var(--danger); border-color: rgba(244,63,94,0.2); }
+
+        /* ---- CUSTOM MODAL POPUP ---- */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(5, 8, 16, 0.75); backdrop-filter: blur(8px); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; }
+        .modal-overlay.active { opacity: 1; pointer-events: auto; }
+        .modal-card { width: 90%; max-width: 420px; background: rgba(18, 26, 43, 0.95); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; padding: 28px; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(45, 212, 191, 0.05); transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); text-align: center; }
+        .modal-overlay.active .modal-card { transform: scale(1); }
+        .modal-icon { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; font-size: 1.75rem; }
+        .modal-icon.danger { background: rgba(244, 63, 94, 0.15); color: var(--danger); border: 1px solid rgba(244, 63, 94, 0.3); box-shadow: 0 0 20px rgba(244, 63, 94, 0.2); }
+        .modal-icon.info { background: rgba(45, 212, 191, 0.15); color: var(--accent); border: 1px solid rgba(45, 212, 191, 0.3); box-shadow: 0 0 20px rgba(45, 212, 191, 0.2); }
+        .modal-title { font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; }
+        .modal-desc { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: 24px; }
+        .modal-actions { display: flex; gap: 12px; justify-content: center; }
+        .modal-btn { flex: 1; padding: 12px 20px; border-radius: 10px; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.3s; font-family: inherit; }
+        .modal-btn-cancel { background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.1); color: var(--text-secondary); }
+        .modal-btn-cancel:hover { background: rgba(255, 255, 255, 0.12); color: var(--text-primary); }
+        .modal-btn-confirm { background: linear-gradient(135deg, #f43f5e, #e11d48); border: none; color: white; box-shadow: 0 4px 15px rgba(244, 63, 94, 0.3); }
+        .modal-btn-confirm:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(244, 63, 94, 0.4); }
+        .modal-btn-info { background: var(--accent-gradient); border: none; color: #050810; box-shadow: 0 4px 15px rgba(45, 212, 191, 0.3); }
+        .modal-btn-info:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(45, 212, 191, 0.4); }
 
         /* ---- CHAT HISTORY ---- */
         .chat-card { padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s; }
@@ -370,11 +391,93 @@
         <div class="dash-footer">&copy; 2026 TMR Portfolio — <a href="index.html">Back to Portfolio</a></div>
     </div>
 
+    <!-- ======== CUSTOM POPUP MODAL ======== -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-card">
+            <div id="modal-icon-container" class="modal-icon danger"><i id="modal-icon-class" class="fa-solid fa-trash-can"></i></div>
+            <div id="modal-title" class="modal-title">Confirm Deletion</div>
+            <div id="modal-desc" class="modal-desc">Are you sure you want to proceed?</div>
+            <div class="modal-actions">
+                <button id="modal-btn-cancel" class="modal-btn modal-btn-cancel" onclick="resolveModal(false)">Cancel</button>
+                <button id="modal-btn-ok" class="modal-btn modal-btn-confirm" onclick="resolveModal(true)">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
             ? 'http://localhost:3000'
             : (window.location.hostname.includes('github.io') ? 'https://tmrportfolio.netlify.app' : '');
         let authToken = localStorage.getItem('adminToken') || null;
+
+        // ---- CUSTOM MODAL POPUP LOGIC ----
+        let modalPromiseResolve = null;
+        function showModalConfirm(title, desc, isDanger = true, confirmText = 'Yes, Delete') {
+            return new Promise((resolve) => {
+                modalPromiseResolve = resolve;
+                const overlay = document.getElementById('custom-modal');
+                const iconCont = document.getElementById('modal-icon-container');
+                const iconClass = document.getElementById('modal-icon-class');
+                const titleEl = document.getElementById('modal-title');
+                const descEl = document.getElementById('modal-desc');
+                const cancelBtn = document.getElementById('modal-btn-cancel');
+                const okBtn = document.getElementById('modal-btn-ok');
+
+                titleEl.textContent = title;
+                descEl.textContent = desc;
+                cancelBtn.style.display = 'inline-block';
+                okBtn.textContent = confirmText;
+
+                if (isDanger) {
+                    iconCont.className = 'modal-icon danger';
+                    iconClass.className = 'fa-solid fa-trash-can';
+                    okBtn.className = 'modal-btn modal-btn-confirm';
+                } else {
+                    iconCont.className = 'modal-icon info';
+                    iconClass.className = 'fa-solid fa-circle-question';
+                    okBtn.className = 'modal-btn modal-btn-info';
+                }
+                overlay.classList.add('active');
+            });
+        }
+
+        function showModalAlert(title, desc, isDanger = false) {
+            return new Promise((resolve) => {
+                modalPromiseResolve = resolve;
+                const overlay = document.getElementById('custom-modal');
+                const iconCont = document.getElementById('modal-icon-container');
+                const iconClass = document.getElementById('modal-icon-class');
+                const titleEl = document.getElementById('modal-title');
+                const descEl = document.getElementById('modal-desc');
+                const cancelBtn = document.getElementById('modal-btn-cancel');
+                const okBtn = document.getElementById('modal-btn-ok');
+
+                titleEl.textContent = title;
+                descEl.textContent = desc;
+                cancelBtn.style.display = 'none';
+                okBtn.textContent = 'OK, Got It';
+
+                if (isDanger) {
+                    iconCont.className = 'modal-icon danger';
+                    iconClass.className = 'fa-solid fa-triangle-exclamation';
+                    okBtn.className = 'modal-btn modal-btn-confirm';
+                } else {
+                    iconCont.className = 'modal-icon info';
+                    iconClass.className = 'fa-solid fa-circle-check';
+                    okBtn.className = 'modal-btn modal-btn-info';
+                }
+                overlay.classList.add('active');
+            });
+        }
+
+        function resolveModal(result) {
+            const overlay = document.getElementById('custom-modal');
+            overlay.classList.remove('active');
+            if (modalPromiseResolve) {
+                modalPromiseResolve(result);
+                modalPromiseResolve = null;
+            }
+        }
 
         // ---- ON LOAD ----
         window.addEventListener('DOMContentLoaded', () => {
@@ -576,7 +679,8 @@
 
         async function deleteMessage(id, btn, event) {
             if (event) event.stopPropagation();
-            if (!confirm('Are you sure you want to permanently delete this contact message?')) return;
+            const confirmed = await showModalConfirm('Delete Contact Message', 'Are you sure you want to permanently delete this contact message? This action cannot be undone.');
+            if (!confirmed) return;
             try {
                 const res = await fetch(`${API_BASE}/api/admin/messages/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` } });
                 if (res.ok) {
@@ -587,12 +691,13 @@
         }
 
         async function clearAllMessages() {
-            if (!confirm('Are you sure you want to permanently delete ALL contact messages? This frees up MongoDB storage.')) return;
+            const confirmed = await showModalConfirm('Clear All Contact Messages', 'Are you sure you want to permanently delete ALL contact messages? This frees up MongoDB storage.', true, 'Clear All');
+            if (!confirmed) return;
             try {
                 const res = await fetch(`${API_BASE}/api/admin/messages`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` } });
                 if (res.ok) {
                     const data = await res.json();
-                    alert(data.message || 'All contact messages cleared!');
+                    await showModalAlert('Success', data.message || 'All contact messages cleared!');
                     fetchMessages(); fetchSystemHealth(); fetchStats();
                 }
             } catch (err) { console.error('Clear messages error:', err); }
@@ -645,7 +750,8 @@
 
         async function deleteChat(id, event) {
             if (event) event.stopPropagation();
-            if (!confirm('Are you sure you want to permanently delete this chat session?')) return;
+            const confirmed = await showModalConfirm('Delete Chat Session', 'Are you sure you want to permanently delete this chat session? This action cannot be undone.');
+            if (!confirmed) return;
             try {
                 const res = await fetch(`${API_BASE}/api/admin/chats/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` } });
                 if (res.ok) {
@@ -655,24 +761,26 @@
         }
 
         async function clearAllChats() {
-            if (!confirm('Are you sure you want to permanently delete ALL chat histories? This will free up significant MongoDB storage.')) return;
+            const confirmed = await showModalConfirm('Clear All Chat Histories', 'Are you sure you want to permanently delete ALL chat histories? This will free up significant MongoDB storage.', true, 'Clear All');
+            if (!confirmed) return;
             try {
                 const res = await fetch(`${API_BASE}/api/admin/chats`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` } });
                 if (res.ok) {
                     const data = await res.json();
-                    alert(data.message || 'All chat histories cleared!');
+                    await showModalAlert('Success', data.message || 'All chat histories cleared!');
                     fetchChats(); fetchSystemHealth(); fetchStats();
                 }
             } catch (err) { console.error('Clear chats error:', err); }
         }
 
         async function clearAllVisits() {
-            if (!confirm('Are you sure you want to clear ALL page visit logs? This will free up MongoDB storage.')) return;
+            const confirmed = await showModalConfirm('Clear Visit Logs', 'Are you sure you want to clear ALL page visit logs? This will free up MongoDB storage.', true, 'Clear Logs');
+            if (!confirmed) return;
             try {
                 const res = await fetch(`${API_BASE}/api/admin/visits`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` } });
                 if (res.ok) {
                     const data = await res.json();
-                    alert(data.message || 'All visit logs cleared!');
+                    await showModalAlert('Success', data.message || 'All visit logs cleared!');
                     fetchSystemHealth(); fetchStats();
                 }
             } catch (err) { console.error('Clear visits error:', err); }
@@ -742,7 +850,7 @@
                 }
             } catch (err) {
                 console.error('Test AI error:', err);
-                alert('Failed to connect to AI test endpoint.');
+                showModalAlert('Connection Failed', 'Failed to connect to AI test endpoint.', true);
             } finally {
                 if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Test Connections'; }
             }
