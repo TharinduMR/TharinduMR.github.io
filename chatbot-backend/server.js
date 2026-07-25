@@ -269,6 +269,161 @@ app.get('/api/admin/chats', requireAdmin, async (req, res) => {
     }
 });
 
+// ---- Admin: System Health & Storage Monitor ----
+app.get('/api/admin/system-health', requireAdmin, async (req, res) => {
+    try {
+        let dbStats = { storageSize: 0, dataSize: 0, objects: 0 };
+        try {
+            if (mongoose.connection && mongoose.connection.db) {
+                dbStats = await mongoose.connection.db.stats();
+            }
+        } catch (e) {
+            console.error("DB stats error:", e.message);
+        }
+
+        const [visitsCount, messagesCount, chatsCount] = await Promise.all([
+            Visit.countDocuments(),
+            ContactMessage.countDocuments(),
+            ChatSession.countDocuments()
+        ]);
+
+        const usedBytes = dbStats.storageSize || dbStats.dataSize || 0;
+        const usedMB = parseFloat((usedBytes / (1024 * 1024)).toFixed(2));
+        const limitMB = 512; // MongoDB Atlas Free Tier Limit
+        const storagePercent = parseFloat(((usedMB / limitMB) * 100).toFixed(2));
+
+        res.json({
+            status: "Online",
+            uptime: Math.round(process.uptime()),
+            nodeVersion: process.version,
+            memoryMB: Math.round(process.memoryUsage().heapUsed / 1024 / 1024),
+            storage: {
+                usedMB: usedMB,
+                limitMB: limitMB,
+                percent: storagePercent,
+                totalObjects: dbStats.objects || (visitsCount + messagesCount + chatsCount),
+                counts: {
+                    visits: visitsCount,
+                    messages: messagesCount,
+                    chats: chatsCount
+                }
+            },
+            aiConfig: {
+                gemini: { status: process.env.GEMINI_API_KEY ? "Configured" : "Missing Key", model: "Gemini 2.0 Flash (Fastest)" },
+                deepseek: { status: process.env.DEEPSEEK_API_KEY ? "Configured" : "Missing Key", model: "DeepSeek-V3" },
+                zhipu: { status: process.env.ZHIPU_API_KEY || process.env.DEEPSEEK_API_KEY ? "Configured" : "Missing Key", model: "GLM-4 Flash / GLM-4v" }
+            }
+        });
+    } catch (err) {
+        console.error('System health error:', err.message);
+        res.status(500).json({ message: 'Failed to fetch system health: ' + err.message });
+    }
+});
+
+// ---- Admin: Live Test AI Servers ----
+app.post('/api/admin/test-ai', requireAdmin, async (req, res) => {
+    const results = {
+        gemini: { status: "Testing...", ok: false, message: "" },
+        deepseek: { status: "Testing...", ok: false, message: "" },
+        zhipu: { status: "Testing...", ok: false, message: "" }
+    };
+
+    // Test Gemini
+    try {
+        const start = Date.now();
+        const model = geminiAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        await model.generateContent({ contents: [{ role: "user", parts: [{ text: "ping" }] }] });
+        results.gemini = { status: `200 OK (${Date.now() - start}ms)`, ok: true, message: "Gemini 2.0 Flash responded instantly." };
+    } catch (e) {
+        const msg = e.message || e.toString();
+        if (msg.includes("429")) results.gemini = { status: "429 Rate Limit Hit", ok: false, message: "Free tier per-minute limit exceeded. Please wait 60s." };
+        else if (msg.includes("404")) results.gemini = { status: "404 Not Found", ok: false, message: "Model endpoint deprecated." };
+        else results.gemini = { status: "Error", ok: false, message: msg.substring(0, 120) };
+    }
+
+    // Test DeepSeek
+    try {
+        if (!process.env.DEEPSEEK_API_KEY) {
+            results.deepseek = { status: "No API Key", ok: false, message: "DEEPSEEK_API_KEY not set in .env" };
+        } else {
+            const start = Date.now();
+            await openai.chat.completions.create({ model: "deepseek-chat", messages: [{ role: "user", content: "ping" }], max_tokens: 5 });
+            results.deepseek = { status: `200 OK (${Date.now() - start}ms)`, ok: true, message: "DeepSeek API active." };
+        }
+    } catch (e) {
+        const msg = e.message || e.toString();
+        if (msg.includes("402")) results.deepseek = { status: "402 Zero Balance ($0)", ok: false, message: "DeepSeek API credit balance is $0.00. Please top up account." };
+        else results.deepseek = { status: "Error", ok: false, message: msg.substring(0, 120) };
+    }
+
+    // Test Zhipu
+    try {
+        if (!process.env.ZHIPU_API_KEY && !process.env.DEEPSEEK_API_KEY) {
+            results.zhipu = { status: "No API Key", ok: false, message: "ZHIPU_API_KEY not set in .env" };
+        } else {
+            const start = Date.now();
+            await openai.chat.completions.create({ model: "glm-4-flash", messages: [{ role: "user", content: "ping" }], max_tokens: 5 });
+            results.zhipu = { status: `200 OK (${Date.now() - start}ms)`, ok: true, message: "Zhipu GLM-4 Flash API active." };
+        }
+    } catch (e) {
+        const msg = e.message || e.toString();
+        if (msg.includes("400")) results.zhipu = { status: "400 Bad Request", ok: false, message: msg.substring(0, 120) };
+        else results.zhipu = { status: "Error", ok: false, message: msg.substring(0, 120) };
+    }
+
+    res.json({ success: true, results });
+});
+
+// ---- Admin: Delete Contact Message ----
+app.delete('/api/admin/messages/:id', requireAdmin, async (req, res) => {
+    try {
+        await ContactMessage.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: "Message deleted successfully." });
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to delete message: ' + err.message });
+    }
+});
+
+// ---- Admin: Clear All Contact Messages ----
+app.delete('/api/admin/messages', requireAdmin, async (req, res) => {
+    try {
+        const result = await ContactMessage.deleteMany({});
+        res.json({ success: true, count: result.deletedCount, message: `Deleted ${result.deletedCount} messages.` });
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to clear messages: ' + err.message });
+    }
+});
+
+// ---- Admin: Delete Chat History Session ----
+app.delete('/api/admin/chats/:id', requireAdmin, async (req, res) => {
+    try {
+        await ChatSession.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: "Chat session deleted successfully." });
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to delete chat session: ' + err.message });
+    }
+});
+
+// ---- Admin: Clear All Chat Sessions ----
+app.delete('/api/admin/chats', requireAdmin, async (req, res) => {
+    try {
+        const result = await ChatSession.deleteMany({});
+        res.json({ success: true, count: result.deletedCount, message: `Deleted ${result.deletedCount} chat sessions.` });
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to clear chat sessions: ' + err.message });
+    }
+});
+
+// ---- Admin: Clear All Page Visit Logs ----
+app.delete('/api/admin/visits', requireAdmin, async (req, res) => {
+    try {
+        const result = await Visit.deleteMany({});
+        res.json({ success: true, count: result.deletedCount, message: `Deleted ${result.deletedCount} visit logs.` });
+    } catch (err) {
+        res.status(500).json({ message: 'Failed to clear visits: ' + err.message });
+    }
+});
+
 // ============================================================
 // AI CHATBOT ENDPOINT
 // ============================================================

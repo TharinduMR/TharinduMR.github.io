@@ -162,6 +162,12 @@
         .msg-card-actions { margin-top: 10px; display: flex; gap: 10px; }
         .mark-read-btn { padding: 5px 12px; font-size: 0.75rem; background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.2); color: var(--accent); border-radius: 6px; cursor: pointer; font-family: inherit; transition: all 0.3s; }
         .mark-read-btn:hover { background: rgba(45,212,191,0.2); }
+        .delete-btn { padding: 5px 12px; font-size: 0.75rem; background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.2); color: var(--danger); border-radius: 6px; cursor: pointer; font-family: inherit; font-weight: 500; transition: all 0.3s; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
+        .delete-btn:hover { background: rgba(244,63,94,0.25); box-shadow: 0 0 10px rgba(244,63,94,0.3); }
+        .status-badge { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 600; }
+        .status-badge.online { background: rgba(16,185,129,0.15); color: var(--success); border: 1px solid rgba(16,185,129,0.3); }
+        .status-badge.error { background: rgba(244,63,94,0.15); color: var(--danger); border: 1px solid rgba(244,63,94,0.3); }
+        .status-badge.warning { background: rgba(245,158,11,0.15); color: var(--warning); border: 1px solid rgba(245,158,11,0.3); }
 
         /* ---- CHAT HISTORY ---- */
         .chat-card { padding: 20px; margin-bottom: 12px; cursor: pointer; transition: all 0.3s; }
@@ -295,6 +301,42 @@
                 </div>
             </div>
 
+            <!-- System & AI Server Health Monitor + MongoDB Storage Manager -->
+            <div class="section-grid">
+                <div class="section-card glass">
+                    <div class="section-title" style="justify-content: space-between;">
+                        <span><i class="fa-solid fa-microchip"></i> AI Server & Token Health</span>
+                        <button class="mark-read-btn" onclick="testAIServers()" id="test-ai-btn" style="padding: 4px 10px;"><i class="fa-solid fa-bolt"></i> Test Connections</button>
+                    </div>
+                    <div class="live-info">
+                        <div class="info-row"><span class="info-row-label">Google Gemini 2.0 Flash</span><span class="info-row-value" id="ai-status-gemini"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">DeepSeek-V3 API</span><span class="info-row-value" id="ai-status-deepseek"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">Zhipu GLM-4 Flash</span><span class="info-row-value" id="ai-status-zhipu"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">Backend Node.js & Memory</span><span class="info-row-value" id="sys-status-node">—</span></div>
+                    </div>
+                </div>
+                <div class="section-card glass">
+                    <div class="section-title"><i class="fa-solid fa-hard-drive"></i> MongoDB Storage Manager (512 MB Limit)</div>
+                    <div class="live-info">
+                        <div style="margin-bottom: 8px;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; margin-bottom: 6px;">
+                                <span style="color: var(--text-secondary);">Storage Used</span>
+                                <span id="storage-text" style="font-weight: 700; color: var(--accent);">0.00 MB / 512 MB (0%)</span>
+                            </div>
+                            <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden;">
+                                <div id="storage-bar" style="width: 0%; height: 100%; background: var(--accent-gradient); transition: width 0.5s ease, background 0.5s ease;"></div>
+                            </div>
+                        </div>
+                        <div class="info-row"><span class="info-row-label">Database Documents</span><span class="info-row-value" id="storage-docs">—</span></div>
+                        <div style="display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap;">
+                            <button class="delete-btn" onclick="clearAllChats()" style="flex: 1; padding: 8px;"><i class="fa-solid fa-trash-can"></i> Clear Chats</button>
+                            <button class="delete-btn" onclick="clearAllMessages()" style="flex: 1; padding: 8px;"><i class="fa-solid fa-trash-can"></i> Clear Messages</button>
+                            <button class="delete-btn" onclick="clearAllVisits()" style="flex: 1; padding: 8px; background: rgba(245,158,11,0.1); border-color: rgba(245,158,11,0.2); color: var(--warning);"><i class="fa-solid fa-broom"></i> Clear Visits</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- TABBED DATA SECTIONS -->
             <div class="tab-nav">
                 <button class="tab-btn active" data-tab="visits"><i class="fa-solid fa-clock-rotate-left"></i> <span class="tab-text">Recent Visits</span></button>
@@ -338,7 +380,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             if (authToken) {
                 fetchStats().then(valid => {
-                    if (valid) { showDashboard(); fetchMessages(); fetchChats(); }
+                    if (valid) { showDashboard(); fetchMessages(); fetchChats(); fetchSystemHealth(); }
                     else { localStorage.removeItem('adminToken'); authToken = null; }
                 });
             }
@@ -369,7 +411,7 @@
                     authToken = data.token;
                     localStorage.setItem('adminToken', authToken);
                     showDashboard();
-                    fetchStats(); fetchMessages(); fetchChats();
+                    fetchStats(); fetchMessages(); fetchChats(); fetchSystemHealth();
                 } else {
                     errorEl.textContent = data.message || 'Invalid password.';
                     btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-right-to-bracket"></i>&nbsp; Sign In';
@@ -401,7 +443,7 @@
         async function refreshAll() {
             const btn = document.getElementById('refresh-btn');
             btn.classList.add('spinning');
-            await Promise.all([fetchStats(), fetchMessages(), fetchChats()]);
+            await Promise.all([fetchStats(), fetchMessages(), fetchChats(), fetchSystemHealth()]);
             setTimeout(() => btn.classList.remove('spinning'), 600);
         }
 
@@ -511,7 +553,10 @@
                     </div>
                     ${m.topic ? `<div class="msg-card-topic"><i class="fa-solid fa-tag"></i> ${escHtml(m.topic)}</div>` : ''}
                     <div class="msg-card-body">${escHtml(m.message)}</div>
-                    ${!m.read ? `<div class="msg-card-actions"><button class="mark-read-btn" onclick="markRead('${m._id}',this)"><i class="fa-solid fa-check"></i> Mark as Read</button></div>` : ''}
+                    <div class="msg-card-actions">
+                        ${!m.read ? `<button class="mark-read-btn" onclick="markRead('${m._id}',this)"><i class="fa-solid fa-check"></i> Mark as Read</button>` : ''}
+                        <button class="delete-btn" onclick="deleteMessage('${m._id}',this,event)"><i class="fa-solid fa-trash"></i> Delete</button>
+                    </div>
                 </div>`;
             }).join('');
         }
@@ -520,13 +565,37 @@
             try {
                 await fetch(`${API_BASE}/api/admin/messages/${id}/read`, { method: 'PUT', headers: { 'Authorization': `Bearer ${authToken}` } });
                 btn.closest('.msg-card').classList.remove('unread');
-                btn.parentElement.remove();
+                btn.remove();
                 // Update badge
                 const badge = document.getElementById('unread-badge');
                 const current = parseInt(badge.textContent) || 0;
                 if (current <= 1) badge.style.display = 'none';
                 else badge.textContent = current - 1;
             } catch (err) { console.error('Mark read error:', err); }
+        }
+
+        async function deleteMessage(id, btn, event) {
+            if (event) event.stopPropagation();
+            if (!confirm('Are you sure you want to permanently delete this contact message?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/messages/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` } });
+                if (res.ok) {
+                    btn.closest('.msg-card').remove();
+                    fetchSystemHealth(); fetchStats();
+                }
+            } catch (err) { console.error('Delete message error:', err); }
+        }
+
+        async function clearAllMessages() {
+            if (!confirm('Are you sure you want to permanently delete ALL contact messages? This frees up MongoDB storage.')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/messages`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message || 'All contact messages cleared!');
+                    fetchMessages(); fetchSystemHealth(); fetchStats();
+                }
+            } catch (err) { console.error('Clear messages error:', err); }
         }
 
         // ---- CHAT HISTORY ----
@@ -552,7 +621,10 @@
                 return `<div class="chat-card glass" onclick="toggleChat(${idx})">
                     <div class="chat-card-header">
                         <div class="chat-card-id"><i class="fa-solid fa-comment-dots"></i> Session ${c.sessionId.substring(0, 20)}…</div>
-                        <div class="chat-card-time">${t.toLocaleDateString('en-US',{month:'short',day:'numeric'})} ${t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</div>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span class="chat-card-time">${t.toLocaleDateString('en-US',{month:'short',day:'numeric'})} ${t.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'})}</span>
+                            <button class="delete-btn" onclick="deleteChat('${c._id}', event)" style="padding: 3px 8px;" title="Delete this chat session"><i class="fa-solid fa-trash"></i></button>
+                        </div>
                     </div>
                     <div class="chat-card-preview">"${escHtml(preview.substring(0, 80))}${preview.length > 80 ? '…' : ''}"</div>
                     <div class="chat-card-meta">
@@ -569,6 +641,111 @@
                     </div>
                 </div>`;
             }).join('');
+        }
+
+        async function deleteChat(id, event) {
+            if (event) event.stopPropagation();
+            if (!confirm('Are you sure you want to permanently delete this chat session?')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/chats/${id}`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` } });
+                if (res.ok) {
+                    fetchChats(); fetchSystemHealth(); fetchStats();
+                }
+            } catch (err) { console.error('Delete chat error:', err); }
+        }
+
+        async function clearAllChats() {
+            if (!confirm('Are you sure you want to permanently delete ALL chat histories? This will free up significant MongoDB storage.')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/chats`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message || 'All chat histories cleared!');
+                    fetchChats(); fetchSystemHealth(); fetchStats();
+                }
+            } catch (err) { console.error('Clear chats error:', err); }
+        }
+
+        async function clearAllVisits() {
+            if (!confirm('Are you sure you want to clear ALL page visit logs? This will free up MongoDB storage.')) return;
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/visits`, { method: 'DELETE', headers: { 'Authorization': `Bearer ${authToken}` } });
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(data.message || 'All visit logs cleared!');
+                    fetchSystemHealth(); fetchStats();
+                }
+            } catch (err) { console.error('Clear visits error:', err); }
+        }
+
+        // ---- SYSTEM & AI HEALTH MONITOR ----
+        async function fetchSystemHealth() {
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/system-health`, { headers: { 'Authorization': `Bearer ${authToken}` } });
+                if (!res.ok) return;
+                const data = await res.json();
+                
+                // Update storage bar
+                const s = data.storage;
+                const bar = document.getElementById('storage-bar');
+                const text = document.getElementById('storage-text');
+                const docs = document.getElementById('storage-docs');
+                if (bar && text) {
+                    bar.style.width = Math.min(s.percent, 100) + '%';
+                    text.textContent = `${s.usedMB} MB / ${s.limitMB} MB (${s.percent}%)`;
+                    if (s.percent > 80) bar.style.background = 'var(--danger)';
+                    else if (s.percent > 50) bar.style.background = 'var(--warning)';
+                    else bar.style.background = 'var(--accent-gradient)';
+                }
+                if (docs) {
+                    docs.textContent = `${s.totalObjects.toLocaleString()} docs (${s.counts.visits} visits, ${s.counts.messages} msgs, ${s.counts.chats} chats)`;
+                }
+
+                // Update system status
+                const sysNode = document.getElementById('sys-status-node');
+                if (sysNode) {
+                    sysNode.innerHTML = `<span class="status-badge online"><i class="fa-solid fa-check"></i> ${data.status}</span> • Node ${data.nodeVersion} (${data.memoryMB} MB RAM)`;
+                }
+
+                // Update initial AI badge configs if not tested yet
+                if (!window.aiTested && data.aiConfig) {
+                    updateAiBadge('ai-status-gemini', data.aiConfig.gemini.status === 'Configured', data.aiConfig.gemini.status);
+                    updateAiBadge('ai-status-deepseek', data.aiConfig.deepseek.status === 'Configured', data.aiConfig.deepseek.status);
+                    updateAiBadge('ai-status-zhipu', data.aiConfig.zhipu.status === 'Configured', data.aiConfig.zhipu.status);
+                }
+            } catch (err) { console.error('System health error:', err); }
+        }
+
+        function updateAiBadge(id, ok, text, isWarn = false) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const cls = ok ? 'online' : (isWarn ? 'warning' : 'error');
+            const icon = ok ? 'fa-check-circle' : (isWarn ? 'fa-exclamation-triangle' : 'fa-times-circle');
+            el.innerHTML = `<span class="status-badge ${cls}"><i class="fa-solid ${icon}"></i> ${text}</span>`;
+        }
+
+        async function testAIServers() {
+            const btn = document.getElementById('test-ai-btn');
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing...'; }
+            document.getElementById('ai-status-gemini').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Pinging Gemini...';
+            document.getElementById('ai-status-deepseek').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Pinging DeepSeek...';
+            document.getElementById('ai-status-zhipu').innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> Pinging GLM-4...';
+            try {
+                const res = await fetch(`${API_BASE}/api/admin/test-ai`, { method: 'POST', headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' } });
+                const data = await res.json();
+                if (data.success && data.results) {
+                    window.aiTested = true;
+                    const r = data.results;
+                    updateAiBadge('ai-status-gemini', r.gemini.ok, r.gemini.status, !r.gemini.ok && r.gemini.status.includes('429'));
+                    updateAiBadge('ai-status-deepseek', r.deepseek.ok, r.deepseek.status, !r.deepseek.ok && r.deepseek.status.includes('402'));
+                    updateAiBadge('ai-status-zhipu', r.zhipu.ok, r.zhipu.status);
+                }
+            } catch (err) {
+                console.error('Test AI error:', err);
+                alert('Failed to connect to AI test endpoint.');
+            } finally {
+                if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fa-solid fa-bolt"></i> Test Connections'; }
+            }
         }
 
         function toggleChat(idx) {
