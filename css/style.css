@@ -2214,6 +2214,16 @@ footer {
     margin-bottom: 0;
 }
 
+.bot-msg img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin: 8px 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    display: block;
+}
+
 .bot-msg ul,
 .bot-msg ol {
     margin-left: 1.25rem;
