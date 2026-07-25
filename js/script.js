@@ -674,6 +674,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.documentElement.style.removeProperty('--chat-width');
                 
                 if (isChatExpanded) {
+                    if (isChatPinned) {
+                        isChatPinned = false;
+                        if (pinChat) pinChat.classList.remove('pinned');
+                    }
                     chatWidget.classList.add('expanded');
                     document.body.classList.add('split-active');
                     expandChat.innerHTML = '<i class="fa-solid fa-arrow-right-to-bracket"></i>';
@@ -719,6 +723,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             chatBox.innerHTML += `<div class="message user-msg">${fileAttachmentHTML}${message}</div>`;
             chatInput.value = '';
+            chatInput.style.height = 'auto';
             chatBox.scrollTop = chatBox.scrollHeight;
 
             // Add typing indicator
@@ -729,7 +734,11 @@ document.addEventListener('DOMContentLoaded', () => {
             try {
                 const BACKEND_URL = getApiBase() + '/api/chat';
                 
-                let payload = { message: message, sessionId: chatSessionId };
+                let payload = { 
+                    message: message, 
+                    sessionId: chatSessionId,
+                    selectedModel: window.selectedAiModel || 'auto'
+                };
                 
                 // Add media file payload if available
                 if (window.MediaHandler) {
@@ -880,9 +889,68 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
+        // Initialize AI Model Selector
+        const modelSelectorBtn = document.getElementById('model-selector-btn');
+        const modelDropdownMenu = document.getElementById('model-dropdown-menu');
+        const currentModelName = document.getElementById('current-model-name');
+        const modelOptions = document.querySelectorAll('.model-option');
+
+        window.selectedAiModel = 'auto';
+
+        if (modelSelectorBtn && modelDropdownMenu) {
+            modelSelectorBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                modelDropdownMenu.classList.toggle('hidden');
+            });
+
+            modelOptions.forEach(option => {
+                option.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const model = option.getAttribute('data-model');
+                    window.selectedAiModel = model;
+                    
+                    modelOptions.forEach(opt => opt.classList.remove('active'));
+                    option.classList.add('active');
+
+                    let displayName = 'Auto (Server Select)';
+                    if (model === 'deepseek-reasoner') displayName = 'DeepSeek-R1 (Reasoner)';
+                    else if (model === 'deepseek-chat') displayName = 'DeepSeek-V3 (Chat)';
+                    else if (model === 'deepseek-coder') displayName = 'DeepSeek Coder';
+                    else if (model === 'gemini-3.1-pro') displayName = 'Gemini 3.1 Pro (High)';
+                    else if (model === 'gemini-3.5-flash') displayName = 'Gemini 3.5 Flash';
+                    else if (model === 'gemini-3.6-flash') displayName = 'Gemini 3.6 Flash';
+                    else if (model === 'gemini-2.5-pro') displayName = 'Gemini 2.5 Pro';
+                    else if (model === 'gemini-2.5-flash') displayName = 'Gemini 2.5 Flash';
+                    else if (model === 'gemini-2.0-flash') displayName = 'Gemini 2.0 Flash';
+                    else if (model === 'gemini-flash-latest') displayName = 'Gemini 1.5 Flash (Free Tier)';
+                    else if (model === 'glm-4-plus') displayName = 'GLM-4 Plus';
+                    else if (model === 'glm-4') displayName = 'GLM-4 Pro';
+                    else if (model === 'glm-4-air') displayName = 'GLM-4 Air';
+                    else if (model === 'glm-4-long') displayName = 'GLM-4 Long';
+                    else if (model === 'glm-4-flash') displayName = 'GLM-4 Flash';
+                    
+                    if (currentModelName) currentModelName.textContent = displayName;
+                    modelDropdownMenu.classList.add('hidden');
+                });
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!modelSelectorBtn.contains(e.target) && !modelDropdownMenu.contains(e.target)) {
+                    modelDropdownMenu.classList.add('hidden');
+                }
+            });
+        }
+
         sendBtn.addEventListener('click', sendChatMessage);
-        chatInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') sendChatMessage();
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendChatMessage();
+            }
+        });
+        chatInput.addEventListener('input', () => {
+            chatInput.style.height = 'auto';
+            chatInput.style.height = Math.min(chatInput.scrollHeight, 140) + 'px';
         });
     }
 });

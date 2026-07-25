@@ -115,7 +115,7 @@
     </div>
 
     <header class="hero" id="home">
-        <div class="hero-bg-image parallaxie"></div>
+        <div class="hero-bg-image"></div>
         <div class="hero-content fade-in-up">
             <h2 class="greeting" data-cursor="-opaque">Hello, I'm</h2>
             <h1 class="name" data-cursor="-opaque">Tharindu Madhusanka Rajapakshe</h1>
@@ -764,13 +764,97 @@
             <button id="chat-remove-file" class="chat-remove-file" title="Remove attachment"><i class="fa-solid fa-times"></i></button>
         </div>
         <div class="chat-input-area">
-            <div class="chat-input-wrapper">
-                <label for="chat-file-input" class="chat-attach-btn" title="Attach file">
-                    <i class="fa-solid fa-paperclip"></i>
-                </label>
-                <input type="file" id="chat-file-input" accept=".jpg,.jpeg,.png,.pdf,.txt,.md,.csv,.json,.doc,.docx,.ppt,.pptx" style="display: none;">
-                <input type="text" id="chat-input" class="chat-input" placeholder="Enter your message...">
-                <button id="send-btn" class="send-btn" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
+            <div class="chat-input-box">
+                <div class="chat-input-row-top">
+                    <div class="chat-toolbar-left">
+                        <input type="file" id="chat-file-input" accept=".jpg,.jpeg,.png,.pdf,.txt,.md,.csv,.json,.doc,.docx,.ppt,.pptx" style="display: none;">
+                        <label for="chat-file-input" class="chat-attach-btn" title="Attach media or file">
+                            <i class="fa-solid fa-paperclip"></i>
+                        </label>
+                        <div class="model-selector-wrapper">
+                            <button type="button" id="model-selector-btn" class="model-selector-btn" title="Select AI Model">
+                                <span id="current-model-name">Auto (Server Select)</span>
+                                <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; opacity: 0.8;"></i>
+                            </button>
+                            <div id="model-dropdown-menu" class="model-dropdown-menu hidden">
+                                <div class="model-category-header">✨ Automatic</div>
+                                <div class="model-option active" data-model="auto">
+                                    <div class="model-opt-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto (Server Select)</div>
+                                    <div class="model-opt-desc">Auto-routes DeepSeek for coding & Gemini for general</div>
+                                </div>
+                                <div class="model-category-header">🤖 DeepSeek AI</div>
+                                <div class="model-option" data-model="deepseek-reasoner">
+                                    <div class="model-opt-title"><i class="fa-solid fa-code"></i> DeepSeek-R1 (Reasoner)</div>
+                                    <div class="model-opt-desc">Flagship advanced reasoning & coding specialist</div>
+                                </div>
+                                <div class="model-option" data-model="deepseek-chat">
+                                    <div class="model-opt-title"><i class="fa-solid fa-comments"></i> DeepSeek-V3 (Chat)</div>
+                                    <div class="model-opt-desc">High-speed general chat & development model</div>
+                                </div>
+                                <div class="model-option" data-model="deepseek-coder">
+                                    <div class="model-opt-title"><i class="fa-solid fa-laptop-code"></i> DeepSeek Coder</div>
+                                    <div class="model-opt-desc">Dedicated software engineering & syntax model</div>
+                                </div>
+                                <div class="model-category-header">⚡ Google Gemini</div>
+                                <div class="model-option" data-model="gemini-3.1-pro">
+                                    <div class="model-opt-title"><i class="fa-solid fa-brain"></i> Gemini 3.1 Pro (High)</div>
+                                    <div class="model-opt-desc">High capability engineering & math model</div>
+                                </div>
+                                <div class="model-option" data-model="gemini-3.5-flash">
+                                    <div class="model-opt-title"><i class="fa-solid fa-bolt"></i> Gemini 3.5 Flash</div>
+                                    <div class="model-opt-desc">Next-gen multimodal speed & reasoning</div>
+                                </div>
+                                <div class="model-option" data-model="gemini-3.6-flash">
+                                    <div class="model-opt-title"><i class="fa-solid fa-bolt-lightning"></i> Gemini 3.6 Flash</div>
+                                    <div class="model-opt-desc">Latest experimental ultra-fast Gemini</div>
+                                </div>
+                                <div class="model-option" data-model="gemini-2.5-pro">
+                                    <div class="model-opt-title"><i class="fa-solid fa-atom"></i> Gemini 2.5 Pro</div>
+                                    <div class="model-opt-desc">Advanced reasoning & coding performance</div>
+                                </div>
+                                <div class="model-option" data-model="gemini-2.5-flash">
+                                    <div class="model-opt-title"><i class="fa-solid fa-gauge-simple-high"></i> Gemini 2.5 Flash</div>
+                                    <div class="model-opt-desc">Balanced speed and intelligence</div>
+                                </div>
+                                <div class="model-option" data-model="gemini-2.0-flash">
+                                    <div class="model-opt-title"><i class="fa-solid fa-wind"></i> Gemini 2.0 Flash</div>
+                                    <div class="model-opt-desc">Low latency general chat model</div>
+                                </div>
+                                <div class="model-option" data-model="gemini-flash-latest">
+                                    <div class="model-opt-title"><i class="fa-solid fa-check-double"></i> Gemini 1.5 Flash (Free Tier)</div>
+                                    <div class="model-opt-desc">Reliable high-speed model with generous quota</div>
+                                </div>
+                                <div class="model-category-header">🧠 Zhipu AI (GLM-4)</div>
+                                <div class="model-option" data-model="glm-4-plus">
+                                    <div class="model-opt-title"><i class="fa-solid fa-crown"></i> GLM-4 Plus</div>
+                                    <div class="model-opt-desc">Zhipu AI flagship intelligence model</div>
+                                </div>
+                                <div class="model-option" data-model="glm-4">
+                                    <div class="model-opt-title"><i class="fa-solid fa-microchip"></i> GLM-4 Pro</div>
+                                    <div class="model-opt-desc">Advanced problem solving & coding</div>
+                                </div>
+                                <div class="model-option" data-model="glm-4-air">
+                                    <div class="model-opt-title"><i class="fa-solid fa-paper-plane"></i> GLM-4 Air</div>
+                                    <div class="model-opt-desc">Fast and lightweight Zhipu model</div>
+                                </div>
+                                <div class="model-option" data-model="glm-4-long">
+                                    <div class="model-opt-title"><i class="fa-solid fa-layer-group"></i> GLM-4 Long</div>
+                                    <div class="model-opt-desc">Optimized for long context and documents</div>
+                                </div>
+                                <div class="model-option" data-model="glm-4-flash">
+                                    <div class="model-opt-title"><i class="fa-solid fa-gauge-high"></i> GLM-4 Flash</div>
+                                    <div class="model-opt-desc">Free & ultra-fast fallback model</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-row-bottom">
+                    <textarea id="chat-input" class="chat-input" rows="1" placeholder="Ask anything, @ to mention, / for actions"></textarea>
+                    <div class="chat-toolbar-right">
+                        <button id="send-btn" class="send-btn" title="Send"><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

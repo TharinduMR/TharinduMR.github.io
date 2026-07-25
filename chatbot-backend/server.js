@@ -330,11 +330,20 @@ function getTaskComplexity(message) {
     return 'light';
 }
 
+// Helper: Coding Task Classifier (for DeepSeek Auto Routing)
+function isCodingTask(message) {
+    const text = (message || '').toLowerCase();
+    const codingKeywords = [
+        'code', 'coding', 'function', 'script', 'program', 'algorithm', 'python', 'javascript', 'c++', 'cpp', 'c#', 'java', 'html', 'css', 'sql', 'debug', 'error', 'api', 'class', 'react', 'node', 'express', 'git', 'compiler', 'syntax', 'loop', 'array', 'object', 'variable', 'database', 'json', 'xml', 'typescript', 'rust', 'golang', 'php', 'ruby', 'swift', 'kotlin', 'flutter', 'docker', 'linux', 'bash', 'bug', 'refactor', 'develop', 'software', 'app'
+    ];
+    return codingKeywords.some(kw => text.includes(kw));
+}
+
 // ============================================================
 // AI CHATBOT ENDPOINT (Gemini Primary + Zhipu Fallback + Attribution)
 // ============================================================
 app.post('/api/chat', async (req, res) => {
-    const { message, sessionId, fileData, fileName, fileType, isTextFile } = req.body;
+    const { message, sessionId, fileData, fileName, fileType, isTextFile, selectedModel } = req.body;
     let userMessage = message || '';
     const ip = req.ip || req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
@@ -359,7 +368,8 @@ app.post('/api/chat', async (req, res) => {
     if (!sessionHistories[sessionId]) {
         sessionHistories[sessionId] = {
             gemini: [],
-            zhipu: []
+            zhipu: [],
+            deepseek: []
         };
     }
 
@@ -372,56 +382,192 @@ app.post('/api/chat', async (req, res) => {
     let fullReply = '';
     let usedModelName = '';
     let geminiSuccess = false;
+    let deepseekSuccess = false;
 
-    // 1. TRY GEMINI PRIMARY
-    const geminiKey = process.env.GEMINI_API_KEY;
-    if (geminiKey && geminiKey.trim() !== '') {
+    let forceZhipu = false;
+    let forceDeepSeek = false;
+    let deepSeekModelOverride = null;
+    let zhipuModelOverride = null;
+
+    const codingTask = isCodingTask(userMessage);
+    let geminiModelsToTry = complexity === 'heavy' ? ['gemini-2.5-pro', 'gemini-pro-latest', 'gemini-1.5-pro', 'gemini-flash-latest'] : ['gemini-flash-latest', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+
+    // Auto-select DeepSeek for coding tasks when auto is selected
+    if ((!selectedModel || selectedModel === 'auto') && codingTask) {
+        forceDeepSeek = true;
+        deepSeekModelOverride = complexity === 'heavy' ? 'deepseek-reasoner' : 'deepseek-chat';
+        usedModelName = complexity === 'heavy' ? 'DeepSeek-R1 (Auto Coding)' : 'DeepSeek-V3 (Auto Coding)';
+    } else {
+        usedModelName = complexity === 'heavy' ? 'Gemini Pro (Auto)' : 'Gemini Flash (Auto)';
+    }
+
+    if (selectedModel && selectedModel !== 'auto') {
+        if (selectedModel === 'deepseek-reasoner') {
+            forceDeepSeek = true;
+            deepSeekModelOverride = 'deepseek-reasoner';
+            usedModelName = 'DeepSeek-R1 (Reasoner)';
+        } else if (selectedModel === 'deepseek-chat') {
+            forceDeepSeek = true;
+            deepSeekModelOverride = 'deepseek-chat';
+            usedModelName = 'DeepSeek-V3 (Chat)';
+        } else if (selectedModel === 'deepseek-coder') {
+            forceDeepSeek = true;
+            deepSeekModelOverride = 'deepseek-coder';
+            usedModelName = 'DeepSeek Coder';
+        } else if (selectedModel === 'gemini-3.1-pro') {
+            geminiModelsToTry = ['gemini-3.1-pro-preview', 'gemini-3-pro-preview', 'gemini-2.5-pro', 'gemini-pro-latest', 'gemini-1.5-pro', 'gemini-flash-latest'];
+            usedModelName = 'Gemini 3.1 Pro (High)';
+        } else if (selectedModel === 'gemini-3.5-flash') {
+            geminiModelsToTry = ['gemini-3.5-flash', 'gemini-3-flash-preview', 'gemini-2.5-flash', 'gemini-flash-latest'];
+            usedModelName = 'Gemini 3.5 Flash';
+        } else if (selectedModel === 'gemini-3.6-flash') {
+            geminiModelsToTry = ['gemini-3.6-flash', 'gemini-3.5-flash', 'gemini-2.5-flash', 'gemini-flash-latest'];
+            usedModelName = 'Gemini 3.6 Flash';
+        } else if (selectedModel === 'gemini-2.5-pro') {
+            geminiModelsToTry = ['gemini-2.5-pro', 'gemini-pro-latest', 'gemini-1.5-pro', 'gemini-flash-latest'];
+            usedModelName = 'Gemini 2.5 Pro';
+        } else if (selectedModel === 'gemini-2.5-flash') {
+            geminiModelsToTry = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-flash-latest'];
+            usedModelName = 'Gemini 2.5 Flash';
+        } else if (selectedModel === 'gemini-2.0-flash') {
+            geminiModelsToTry = ['gemini-2.0-flash', 'gemini-flash-latest'];
+            usedModelName = 'Gemini 2.0 Flash';
+        } else if (selectedModel === 'gemini-flash-latest' || selectedModel === 'gemini-flash') {
+            geminiModelsToTry = ['gemini-flash-latest', 'gemini-1.5-flash'];
+            usedModelName = 'Gemini 1.5 Flash (Free Tier)';
+        } else if (selectedModel === 'glm-4-plus') {
+            forceZhipu = true;
+            zhipuModelOverride = 'glm-4-plus';
+            usedModelName = 'GLM-4 Plus';
+        } else if (selectedModel === 'glm-4') {
+            forceZhipu = true;
+            zhipuModelOverride = 'glm-4';
+            usedModelName = 'GLM-4 Pro';
+        } else if (selectedModel === 'glm-4-air') {
+            forceZhipu = true;
+            zhipuModelOverride = 'glm-4-air';
+            usedModelName = 'GLM-4 Air';
+        } else if (selectedModel === 'glm-4-long') {
+            forceZhipu = true;
+            zhipuModelOverride = 'glm-4-long';
+            usedModelName = 'GLM-4 Long';
+        } else if (selectedModel === 'glm-4-flash') {
+            forceZhipu = true;
+            zhipuModelOverride = 'glm-4-flash';
+            usedModelName = 'GLM-4 Flash';
+        }
+    }
+
+    // 1. TRY DEEPSEEK (if selected or auto-routed for coding)
+    const deepseekKey = process.env.DEEPSEEK_API_KEY;
+    if (forceDeepSeek && deepseekKey && deepseekKey.trim() !== '') {
         try {
-            const { GoogleGenerativeAI } = require('@google/generative-ai');
-            const genAI = new GoogleGenerativeAI(geminiKey);
-
-            const geminiModel = complexity === 'heavy' ? 'gemini-3.1-pro' : 'gemini-flash-latest';
-            usedModelName = complexity === 'heavy' ? 'Gemini 3.1 Pro' : 'Gemini Flash';
-
-            const model = genAI.getGenerativeModel({
-                model: geminiModel,
-                systemInstruction: fullInstruction
+            const OpenAI = require('openai');
+            const openai = new OpenAI({
+                apiKey: deepseekKey,
+                baseURL: "https://api.deepseek.com"
             });
 
-            const chat = model.startChat({ history: sessionHistories[sessionId].gemini });
-            
-            // Send payload (string or array of parts)
-            const result = await chat.sendMessageStream(parsedMedia.geminiPayload);
+            const dsModel = deepSeekModelOverride || 'deepseek-chat';
+            let messagesPayload = [{ role: "system", content: fullInstruction }];
+            messagesPayload = messagesPayload.concat(sessionHistories[sessionId].deepseek || []);
 
-            for await (const chunk of result.stream) {
-                const text = chunk.text();
+            const dsContent = typeof parsedMedia.finalMessage === 'string' ? parsedMedia.finalMessage : String(userMessage);
+            messagesPayload.push({ role: "user", content: dsContent });
+
+            const stream = await openai.chat.completions.create({
+                model: dsModel,
+                messages: messagesPayload,
+                stream: true,
+                temperature: 0.2,
+                max_tokens: 4096
+            });
+
+            for await (const chunk of stream) {
+                const text = chunk.choices[0]?.delta?.content || "";
                 fullReply += text;
-                res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+                if (text) {
+                    res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+                }
             }
-            geminiSuccess = true;
+            deepseekSuccess = true;
 
             // Save history
-            const userParts = Array.isArray(parsedMedia.geminiPayload) ? parsedMedia.geminiPayload : [{ text: String(parsedMedia.geminiPayload) }];
-            sessionHistories[sessionId].gemini.push({ role: 'user', parts: userParts });
-            sessionHistories[sessionId].gemini.push({ role: 'model', parts: [{ text: fullReply }] });
+            sessionHistories[sessionId].deepseek.push({ role: 'user', content: dsContent });
+            sessionHistories[sessionId].deepseek.push({ role: 'assistant', content: fullReply });
 
             const zhipuUserContent = Array.isArray(parsedMedia.zhipuPayload) ? parsedMedia.zhipuPayload : String(parsedMedia.zhipuPayload);
             sessionHistories[sessionId].zhipu.push({ role: 'user', content: zhipuUserContent });
             sessionHistories[sessionId].zhipu.push({ role: 'assistant', content: fullReply });
 
-            if (sessionHistories[sessionId].gemini.length > 20) {
+            const userParts = Array.isArray(parsedMedia.geminiPayload) ? parsedMedia.geminiPayload : [{ text: String(parsedMedia.geminiPayload) }];
+            sessionHistories[sessionId].gemini.push({ role: 'user', parts: userParts });
+            sessionHistories[sessionId].gemini.push({ role: 'model', parts: [{ text: fullReply }] });
+
+            if (sessionHistories[sessionId].deepseek.length > 20) {
+                sessionHistories[sessionId].deepseek = sessionHistories[sessionId].deepseek.slice(-20);
                 sessionHistories[sessionId].gemini = sessionHistories[sessionId].gemini.slice(-20);
                 sessionHistories[sessionId].zhipu = sessionHistories[sessionId].zhipu.slice(-20);
             }
-
-        } catch (geminiErr) {
-            console.warn('Primary Gemini API failed/exceeded quota. Falling back to Zhipu AI...', geminiErr.message);
-            fullReply = ''; // Reset reply buffer for fallback
+        } catch (dsErr) {
+            console.warn('DeepSeek API failed. Falling back to Gemini/Zhipu...', dsErr.message);
+            fullReply = '';
         }
     }
 
-    // 2. FALLBACK TO ZHIPU AI (if Gemini API key missing or failed)
-    if (!geminiSuccess) {
+    // 2. TRY GEMINI PRIMARY (if not forceZhipu and DeepSeek didn't already succeed)
+    const geminiKey = process.env.GEMINI_API_KEY;
+    if (!deepseekSuccess && geminiKey && geminiKey.trim() !== '' && !forceZhipu) {
+        const { GoogleGenerativeAI } = require('@google/generative-ai');
+        const genAI = new GoogleGenerativeAI(geminiKey);
+
+        for (const candidateModel of geminiModelsToTry) {
+            try {
+                const model = genAI.getGenerativeModel({
+                    model: candidateModel,
+                    systemInstruction: fullInstruction
+                });
+
+                const chat = model.startChat({ history: sessionHistories[sessionId].gemini });
+
+                // Send payload (string or array of parts)
+                const result = await chat.sendMessageStream(parsedMedia.geminiPayload);
+
+                fullReply = '';
+                for await (const chunk of result.stream) {
+                    const text = chunk.text();
+                    fullReply += text;
+                    res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+                }
+                geminiSuccess = true;
+
+                // Save history
+                const userParts = Array.isArray(parsedMedia.geminiPayload) ? parsedMedia.geminiPayload : [{ text: String(parsedMedia.geminiPayload) }];
+                sessionHistories[sessionId].gemini.push({ role: 'user', parts: userParts });
+                sessionHistories[sessionId].gemini.push({ role: 'model', parts: [{ text: fullReply }] });
+
+                const zhipuUserContent = Array.isArray(parsedMedia.zhipuPayload) ? parsedMedia.zhipuPayload : String(parsedMedia.zhipuPayload);
+                sessionHistories[sessionId].zhipu.push({ role: 'user', content: zhipuUserContent });
+                sessionHistories[sessionId].zhipu.push({ role: 'assistant', content: fullReply });
+
+                sessionHistories[sessionId].deepseek.push({ role: 'user', content: String(zhipuUserContent) });
+                sessionHistories[sessionId].deepseek.push({ role: 'assistant', content: fullReply });
+
+                if (sessionHistories[sessionId].gemini.length > 20) {
+                    sessionHistories[sessionId].gemini = sessionHistories[sessionId].gemini.slice(-20);
+                    sessionHistories[sessionId].zhipu = sessionHistories[sessionId].zhipu.slice(-20);
+                    sessionHistories[sessionId].deepseek = sessionHistories[sessionId].deepseek.slice(-20);
+                }
+                break; // Success! Exit loop
+            } catch (geminiErr) {
+                console.warn(`Gemini model ${candidateModel} failed/exceeded quota (${geminiErr.message.split('\n')[0]}). Trying next candidate...`);
+                fullReply = ''; // Reset reply buffer for next candidate or fallback
+            }
+        }
+    }
+
+    // 3. FALLBACK TO ZHIPU AI (if Gemini and DeepSeek failed)
+    if (!deepseekSuccess && !geminiSuccess) {
         try {
             const zhipuKey = process.env.ZHIPU_API_KEY || process.env.GEMINI_API_KEY || API_KEY;
             const OpenAI = require('openai');
@@ -431,10 +577,16 @@ app.post('/api/chat', async (req, res) => {
             });
 
             let zhipuModel = complexity === 'heavy' ? 'glm-4' : 'glm-4-flash';
-            if (parsedMedia.zhipuModelOverride) {
+            if (zhipuModelOverride) {
+                zhipuModel = zhipuModelOverride;
+            } else if (parsedMedia.zhipuModelOverride) {
                 zhipuModel = parsedMedia.zhipuModelOverride;
             }
-            usedModelName = `Zhipu ${zhipuModel.toUpperCase()} (Fallback)`;
+            if (!forceZhipu && !forceDeepSeek) {
+                usedModelName = `Zhipu ${zhipuModel.toUpperCase()} (Fallback)`;
+            } else {
+                usedModelName = `Zhipu ${zhipuModel.toUpperCase()}`;
+            }
 
             // Format message array for Zhipu
             let messagesPayload = [{ role: "system", content: fullInstruction }];
@@ -471,9 +623,13 @@ app.post('/api/chat', async (req, res) => {
             sessionHistories[sessionId].gemini.push({ role: 'user', parts: userParts });
             sessionHistories[sessionId].gemini.push({ role: 'model', parts: [{ text: fullReply }] });
 
+            sessionHistories[sessionId].deepseek.push({ role: 'user', content: String(zhipuUserContent) });
+            sessionHistories[sessionId].deepseek.push({ role: 'assistant', content: fullReply });
+
             if (sessionHistories[sessionId].gemini.length > 20) {
                 sessionHistories[sessionId].gemini = sessionHistories[sessionId].gemini.slice(-20);
                 sessionHistories[sessionId].zhipu = sessionHistories[sessionId].zhipu.slice(-20);
+                sessionHistories[sessionId].deepseek = sessionHistories[sessionId].deepseek.slice(-20);
             }
 
         } catch (zhipuErr) {
