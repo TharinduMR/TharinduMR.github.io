@@ -8,6 +8,15 @@
 [build.environment]
   SECRETS_SCAN_ENABLED = "false"
 
+[functions]
+  # Extend timeout from default 10s to 26s for image generation APIs
+  external_node_modules = ["@google/genai"]
+  node_bundler = "esbuild"
+
+[functions."api"]
+  # Maximum timeout for serverless functions (26s max on Pro, 10s on free)
+  timeout = 26
+
 [[redirects]]
   # Redirect all /api/ traffic to the backend Express function
   from = "/api/*"

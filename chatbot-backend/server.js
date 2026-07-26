@@ -649,23 +649,38 @@ app.post('/api/chat', async (req, res) => {
         const geminiKey = process.env.GEMINI_API_KEY;
         if (geminiKey && geminiKey.trim() !== '') {
             try {
-                const { GoogleGenerativeAI } = require('@google/generative-ai');
-                const genAI = new GoogleGenerativeAI(geminiKey);
-                const model = genAI.getGenerativeModel({
-                    model: 'gemini-2.5-flash-image',
-                    generationConfig: {
-                        responseModalities: ['image']
+                const { GoogleGenAI } = require('@google/genai');
+                const ai = new GoogleGenAI({ apiKey: geminiKey });
+
+                const captionText = '🎨 Generating image with Gemini...\n\n';
+                res.write(`data: ${JSON.stringify({ chunk: captionText })}\n\n`);
+
+                // Try models in order: newest stable → previous stable
+                const imageModels = ['gemini-2.5-flash-image', 'gemini-2.5-flash-preview-04-17'];
+                let response = null;
+                let modelUsed = '';
+
+                for (const modelName of imageModels) {
+                    try {
+                        response = await ai.models.generateContent({
+                            model: modelName,
+                            contents: userMessage,
+                            config: {
+                                responseModalities: ['Text', 'Image']
+                            }
+                        });
+                        modelUsed = modelName;
+                        break; // success
+                    } catch (modelErr) {
+                        console.warn(`Image model ${modelName} failed:`, modelErr.message?.substring(0, 100));
+                        continue; // try next model
                     }
-                });
+                }
 
-                const prompt = userMessage;
-                const result = await model.generateContent(prompt);
-                const response = result.response;
-
-                usedModelName = 'Gemini Imagen 3';
+                usedModelName = `Gemini (${modelUsed || 'Flash Image'})`;
 
                 // Extract text and image parts from the response
-                if (response.candidates && response.candidates[0] && response.candidates[0].content) {
+                if (response && response.candidates && response.candidates[0] && response.candidates[0].content) {
                     const parts = response.candidates[0].content.parts || [];
 
                     for (const part of parts) {
@@ -674,7 +689,7 @@ app.post('/api/chat', async (req, res) => {
                             res.write(`data: ${JSON.stringify({ chunk: part.text })}\n\n`);
                         }
                         if (part.inlineData) {
-                            const mimeType = part.inlineData.mimeType || 'image/jpeg';
+                            const mimeType = part.inlineData.mimeType || 'image/png';
                             const base64Data = part.inlineData.data;
                             const dataUrl = `data:${mimeType};base64,${base64Data}`;
                             res.write(`data: ${JSON.stringify({ image: dataUrl })}\n\n`);
@@ -690,7 +705,9 @@ app.post('/api/chat', async (req, res) => {
                 }
 
             } catch (geminiImgErr) {
-                console.warn('Gemini Imagen error:', geminiImgErr.message?.substring(0, 150));
+                console.warn('Gemini Imagen error:', geminiImgErr.message?.substring(0, 300));
+                // Send error info to client for debugging
+                res.write(`data: ${JSON.stringify({ chunk: `⚠️ Gemini image generation failed: ${geminiImgErr.message?.substring(0, 100)}. Trying fallback...\n\n` })}\n\n`);
             }
         }
 
@@ -702,7 +719,8 @@ app.post('/api/chat', async (req, res) => {
                     const OpenAI = require('openai');
                     const openai = new OpenAI({
                         apiKey: zhipuKey,
-                        baseURL: 'https://open.bigmodel.cn/api/paas/v4/'
+                        baseURL: 'https://open.bigmodel.cn/api/paas/v4/',
+                        timeout: 20000  // 20 second timeout
                     });
 
                     const captionText = '🎨 Generating image with CogView-3...\n\n';
@@ -721,9 +739,13 @@ app.post('/api/chat', async (req, res) => {
                         fullReply = captionText + '[Generated Image]\n';
                         imageGenSuccess = true;
                     }
+                } else {
+                    console.warn('CogView-3 fallback skipped: No ZHIPU_API_KEY or DEEPSEEK_API_KEY found');
+                    res.write(`data: ${JSON.stringify({ chunk: '⚠️ No fallback image API key configured.\n\n' })}\n\n`);
                 }
             } catch (cogErr) {
-                console.warn('CogView-3 fallback error:', cogErr.message?.substring(0, 150));
+                console.warn('CogView-3 fallback error:', cogErr.message?.substring(0, 300));
+                res.write(`data: ${JSON.stringify({ chunk: `⚠️ CogView-3 fallback also failed: ${cogErr.message?.substring(0, 100)}\n\n` })}\n\n`);
             }
         }
 
