@@ -842,12 +842,7 @@ app.post('/api/chat', async (req, res) => {
     const codingTask = isCodingTask(userMessage);
     let geminiModelsToTry = complexity === 'heavy' ? ['gemini-3.1-pro-preview', 'gemini-2.0-flash', 'gemini-flash-latest'] : ['gemini-2.0-flash', 'gemini-3.5-flash', 'gemini-flash-latest'];
 
-    // Auto-select DeepSeek for coding tasks when auto is selected
-    if ((!selectedModel || selectedModel === 'auto' || selectedModel === 'gpt-oss-120b') && codingTask && process.env.DEEPSEEK_API_KEY) {
-        forceDeepSeek = true;
-        deepSeekModelOverride = complexity === 'heavy' ? 'deepseek-reasoner' : 'deepseek-chat';
-        usedModelName = complexity === 'heavy' ? 'DeepSeek-R1 (Auto Coding)' : 'DeepSeek-V3 (Auto Coding)';
-    } else if (!selectedModel || selectedModel === 'auto' || selectedModel === 'gpt-oss-120b') {
+    if (!selectedModel || selectedModel === 'auto' || selectedModel === 'gpt-oss-120b') {
         forceNvidia = true;
         nvidiaModelOverride = 'openai/gpt-oss-120b';
         usedModelName = 'GPT-OSS 120B (Default)';
