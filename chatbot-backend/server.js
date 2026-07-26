@@ -15,6 +15,16 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+// Root Health Check (for Vercel backend verification)
+app.get('/', (req, res) => {
+    res.json({
+        status: 'online',
+        service: 'Tharindu Portfolio AI Backend',
+        platform: 'Vercel Serverless Express',
+        timestamp: new Date().toISOString()
+    });
+});
+
 // ============================================================
 // MONGODB SERVERLESS CONNECTION MANAGER
 // ============================================================
