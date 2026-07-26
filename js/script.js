@@ -3,8 +3,9 @@ function getApiBase() {
         return 'http://localhost:3000';
     }
     if (window.location.hostname.includes('github.io')) {
-        return 'https://tmrportfolio.netlify.app';
+        return 'https://tmrportfolio.vercel.app';
     }
+    // On Vercel or any deployed domain, API is same-origin
     return '';
 }
 

@@ -422,7 +422,7 @@
     <script>
         const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:')
             ? 'http://localhost:3000'
-            : (window.location.hostname.includes('github.io') ? 'https://tmrportfolio.netlify.app' : '');
+            : (window.location.hostname.includes('github.io') ? 'https://tmrportfolio.vercel.app' : '');
         let authToken = localStorage.getItem('adminToken') || null;
 
         // ---- CUSTOM MODAL POPUP LOGIC ----
