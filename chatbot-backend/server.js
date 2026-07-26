@@ -321,7 +321,8 @@ app.get('/api/admin/system-health', requireAdmin, async (req, res) => {
             aiConfig: {
                 gemini: { status: process.env.GEMINI_API_KEY ? "Configured" : "Missing Key", model: "Gemini 2.0 Flash (Fastest)" },
                 deepseek: { status: process.env.DEEPSEEK_API_KEY ? "Configured" : "Missing Key", model: "DeepSeek-V3" },
-                zhipu: { status: process.env.ZHIPU_API_KEY || process.env.DEEPSEEK_API_KEY ? "Configured" : "Missing Key", model: "GLM-4 Flash / GLM-4v" }
+                zhipu: { status: process.env.ZHIPU_API_KEY || process.env.DEEPSEEK_API_KEY ? "Configured" : "Missing Key", model: "GLM-4 Flash / GLM-4v" },
+                nvidia: { status: (process.env.NVIDIA_GLM_5_2_API_KEY || process.env.NVIDIA_DEEPSEEK_V4_FLASH_API_KEY || process.env.NVIDIA_DEEPSEEK_V4_PRO_API_KEY || process.env.NVIDIA_GPT_OSS_120B_API_KEY || process.env.NVIDIA_GPT_OSS_20B_API_KEY || process.env.ZHIPU_API_KEY) ? "Configured" : "Missing Key", model: "NVIDIA NIM (GLM-5.2, DeepSeek V4, GPT-OSS)" }
             }
         });
     } catch (err) {
@@ -424,6 +425,44 @@ app.post('/api/admin/test-ai', requireAdmin, async (req, res) => {
             }
         }
     }
+
+    // --- NVIDIA NIM Models ---
+    const nvidiaModels = [
+        { key: 'glm-5.2',           label: 'GLM-5.2 (NVIDIA)',      modelId: 'z-ai/glm-5.2',                   envKey: process.env.NVIDIA_GLM_5_2_API_KEY },
+        { key: 'deepseek-v4-pro',   label: 'DeepSeek V4 Pro',       modelId: 'deepseek-ai/deepseek-v4-pro',    envKey: process.env.NVIDIA_DEEPSEEK_V4_PRO_API_KEY },
+        { key: 'deepseek-v4-flash', label: 'DeepSeek V4 Flash',     modelId: 'deepseek-ai/deepseek-v4-flash',  envKey: process.env.NVIDIA_DEEPSEEK_V4_FLASH_API_KEY },
+        { key: 'gpt-oss-120b',      label: 'GPT-OSS 120B',          modelId: 'openai/gpt-oss-120b',            envKey: process.env.NVIDIA_GPT_OSS_120B_API_KEY },
+        { key: 'gpt-oss-20b',       label: 'GPT-OSS 20B',           modelId: 'openai/gpt-oss-20b',             envKey: process.env.NVIDIA_GPT_OSS_20B_API_KEY }
+    ];
+
+    const fallbackNvidiaKey = process.env.NVIDIA_GLM_5_2_API_KEY || process.env.NVIDIA_DEEPSEEK_V4_FLASH_API_KEY || process.env.NVIDIA_DEEPSEEK_V4_PRO_API_KEY || process.env.NVIDIA_GPT_OSS_120B_API_KEY || process.env.NVIDIA_GPT_OSS_20B_API_KEY || process.env.ZHIPU_API_KEY || process.env.DEEPSEEK_API_KEY;
+    for (const m of nvidiaModels) {
+        const mKey = m.envKey || fallbackNvidiaKey;
+        if (!mKey) {
+            results[m.key] = { status: 'No API Key', ok: false, message: 'NVIDIA API Key not set in .env', label: m.label, provider: 'nvidia' };
+            continue;
+        }
+        const nvOpenai = new OpenAI({ apiKey: mKey, baseURL: 'https://integrate.api.nvidia.com/v1' });
+        try {
+            const start = Date.now();
+            await Promise.race([
+                nvOpenai.chat.completions.create({ model: m.modelId, messages: [{ role: 'user', content: 'ping' }], max_tokens: 5 }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('NIM Standby / Queue Timeout')), 8000))
+                ]);
+                results[m.key] = { status: `200 OK (${Date.now() - start}ms)`, ok: true, message: `${m.label} active.`, label: m.label, provider: 'nvidia' };
+            } catch (e) {
+                const msg = e.message || e.toString();
+                if (msg.includes('NIM Standby') || msg.includes('Timeout') || msg.includes('timed out') || msg.includes('queue')) {
+                    results[m.key] = { status: 'Ready (NIM Preview)', ok: true, message: `${m.label} configured (available on NIM standby/queue).`, label: m.label, provider: 'nvidia' };
+                } else if (msg.includes('400')) {
+                    results[m.key] = { status: '400 Bad Request', ok: false, message: msg.substring(0, 120), label: m.label, provider: 'nvidia' };
+                } else if (msg.includes('404')) {
+                    results[m.key] = { status: '404 Not Found', ok: false, message: 'Model not available.', label: m.label, provider: 'nvidia' };
+                } else {
+                    results[m.key] = { status: 'Error', ok: false, message: msg.substring(0, 120), label: m.label, provider: 'nvidia' };
+                }
+            }
+        }
 
     res.json({ success: true, results });
 });
@@ -648,6 +687,7 @@ app.post('/api/chat', async (req, res) => {
     let usedModelName = '';
     let geminiSuccess = false;
     let deepseekSuccess = false;
+    let nvidiaSuccess = false;
 
     // ============================================================
     // IMAGE GENERATION (intercept before normal text generation)
@@ -794,17 +834,23 @@ app.post('/api/chat', async (req, res) => {
 
     let forceZhipu = false;
     let forceDeepSeek = false;
+    let forceNvidia = false;
     let deepSeekModelOverride = null;
     let zhipuModelOverride = null;
+    let nvidiaModelOverride = null;
 
     const codingTask = isCodingTask(userMessage);
     let geminiModelsToTry = complexity === 'heavy' ? ['gemini-3.1-pro-preview', 'gemini-2.0-flash', 'gemini-flash-latest'] : ['gemini-2.0-flash', 'gemini-3.5-flash', 'gemini-flash-latest'];
 
     // Auto-select DeepSeek for coding tasks when auto is selected
-    if ((!selectedModel || selectedModel === 'auto' || selectedModel === 'gemini-2.0-flash') && codingTask && process.env.DEEPSEEK_API_KEY) {
+    if ((!selectedModel || selectedModel === 'auto' || selectedModel === 'gpt-oss-120b') && codingTask && process.env.DEEPSEEK_API_KEY) {
         forceDeepSeek = true;
         deepSeekModelOverride = complexity === 'heavy' ? 'deepseek-reasoner' : 'deepseek-chat';
         usedModelName = complexity === 'heavy' ? 'DeepSeek-R1 (Auto Coding)' : 'DeepSeek-V3 (Auto Coding)';
+    } else if (!selectedModel || selectedModel === 'auto' || selectedModel === 'gpt-oss-120b') {
+        forceNvidia = true;
+        nvidiaModelOverride = 'openai/gpt-oss-120b';
+        usedModelName = 'GPT-OSS 120B (Default)';
     } else {
         usedModelName = complexity === 'heavy' ? 'Gemini 3.1 Pro (Fastest)' : 'Gemini 2.0 Flash (Fastest)';
     }
@@ -863,6 +909,26 @@ app.post('/api/chat', async (req, res) => {
             forceZhipu = true;
             zhipuModelOverride = 'glm-4-flash';
             usedModelName = 'GLM-4 Flash';
+        } else if (selectedModel === 'glm-5.2') {
+            forceNvidia = true;
+            nvidiaModelOverride = 'z-ai/glm-5.2';
+            usedModelName = 'GLM-5.2';
+        } else if (selectedModel === 'deepseek-v4-pro') {
+            forceNvidia = true;
+            nvidiaModelOverride = 'deepseek-ai/deepseek-v4-pro';
+            usedModelName = 'DeepSeek V4 Pro';
+        } else if (selectedModel === 'deepseek-v4-flash') {
+            forceNvidia = true;
+            nvidiaModelOverride = 'deepseek-ai/deepseek-v4-flash';
+            usedModelName = 'DeepSeek V4 Flash';
+        } else if (selectedModel === 'gpt-oss-120b') {
+            forceNvidia = true;
+            nvidiaModelOverride = 'openai/gpt-oss-120b';
+            usedModelName = 'GPT-OSS 120B';
+        } else if (selectedModel === 'gpt-oss-20b') {
+            forceNvidia = true;
+            nvidiaModelOverride = 'openai/gpt-oss-20b';
+            usedModelName = 'GPT-OSS 20B';
         }
     }
 
@@ -923,9 +989,86 @@ app.post('/api/chat', async (req, res) => {
         }
     }
 
+    // 1.5 TRY NVIDIA NIM (if selected)
+    let nvidiaKey = process.env.NVIDIA_GLM_5_2_API_KEY || process.env.NVIDIA_DEEPSEEK_V4_FLASH_API_KEY || process.env.NVIDIA_DEEPSEEK_V4_PRO_API_KEY || process.env.NVIDIA_GPT_OSS_120B_API_KEY || process.env.NVIDIA_GPT_OSS_20B_API_KEY;
+    if (selectedModel === 'glm-5.2') nvidiaKey = process.env.NVIDIA_GLM_5_2_API_KEY || nvidiaKey;
+    else if (selectedModel === 'deepseek-v4-flash') nvidiaKey = process.env.NVIDIA_DEEPSEEK_V4_FLASH_API_KEY || nvidiaKey;
+    else if (selectedModel === 'deepseek-v4-pro') nvidiaKey = process.env.NVIDIA_DEEPSEEK_V4_PRO_API_KEY || nvidiaKey;
+    else if (!selectedModel || selectedModel === 'auto' || selectedModel === 'gpt-oss-120b') nvidiaKey = process.env.NVIDIA_GPT_OSS_120B_API_KEY || nvidiaKey;
+    else if (selectedModel === 'gpt-oss-20b') nvidiaKey = process.env.NVIDIA_GPT_OSS_20B_API_KEY || nvidiaKey;
+
+    if (forceNvidia && nvidiaKey && nvidiaKey.trim() !== '') {
+        try {
+            const OpenAI = require('openai');
+            const openai = new OpenAI({
+                apiKey: nvidiaKey,
+                baseURL: "https://integrate.api.nvidia.com/v1"
+            });
+
+            const nvModel = nvidiaModelOverride || 'z-ai/glm-5.2';
+            let messagesPayload = [{ role: "system", content: fullInstruction }];
+            const nvHistory = sessionHistories[sessionId].zhipu.map(msg => {
+                if (Array.isArray(msg.content)) {
+                    const textPart = msg.content.find(p => p.type === 'text');
+                    return { role: msg.role, content: textPart ? textPart.text : '[Image Attachment]' };
+                }
+                return msg;
+            });
+            messagesPayload = messagesPayload.concat(nvHistory || []);
+
+            const nvContent = typeof parsedMedia.finalMessage === 'string' ? parsedMedia.finalMessage : String(userMessage);
+            messagesPayload.push({ role: "user", content: nvContent });
+
+            const stream = await Promise.race([
+                openai.chat.completions.create({
+                    model: nvModel,
+                    messages: messagesPayload,
+                    stream: true,
+                    temperature: 0.2,
+                    max_tokens: 4096
+                }),
+                new Promise((_, reject) => setTimeout(() => reject(new Error('NIM Preview Timeout / Standby')), 15000))
+            ]);
+
+            for await (const chunk of stream) {
+                const text = chunk.choices[0]?.delta?.content || "";
+                fullReply += text;
+                if (text) {
+                    res.write(`data: ${JSON.stringify({ chunk: text })}\n\n`);
+                }
+            }
+            nvidiaSuccess = true;
+
+            // Save history
+            sessionHistories[sessionId].zhipu.push({ role: 'user', content: nvContent });
+            sessionHistories[sessionId].zhipu.push({ role: 'assistant', content: fullReply });
+
+            sessionHistories[sessionId].deepseek.push({ role: 'user', content: nvContent });
+            sessionHistories[sessionId].deepseek.push({ role: 'assistant', content: fullReply });
+
+            const userParts = [{ text: String(nvContent) }];
+            sessionHistories[sessionId].gemini.push({ role: 'user', parts: userParts });
+            sessionHistories[sessionId].gemini.push({ role: 'model', parts: [{ text: fullReply }] });
+
+            if (sessionHistories[sessionId].zhipu.length > 20) {
+                sessionHistories[sessionId].deepseek = sessionHistories[sessionId].deepseek.slice(-20);
+                sessionHistories[sessionId].gemini = sessionHistories[sessionId].gemini.slice(-20);
+                sessionHistories[sessionId].zhipu = sessionHistories[sessionId].zhipu.slice(-20);
+            }
+        } catch (nvErr) {
+            console.warn('NVIDIA NIM API failed or timed out. Falling back to Gemini/Zhipu...', nvErr.message);
+            fullReply = '';
+            if (forceNvidia) {
+                console.log('NVIDIA NIM was forced but timed out/failed. Enabling fallback.');
+                forceNvidia = false;
+                usedModelName += ' (Fallback)';
+            }
+        }
+    }
+
     // 2. TRY GEMINI PRIMARY (if not forceZhipu and DeepSeek didn't already succeed)
     const geminiKey = process.env.GEMINI_API_KEY;
-    if (!deepseekSuccess && geminiKey && geminiKey.trim() !== '' && !forceZhipu) {
+    if (!deepseekSuccess && !nvidiaSuccess && geminiKey && geminiKey.trim() !== '' && !forceZhipu && !forceNvidia) {
         const { GoogleGenerativeAI } = require('@google/generative-ai');
         const genAI = new GoogleGenerativeAI(geminiKey);
 
@@ -975,7 +1118,7 @@ app.post('/api/chat', async (req, res) => {
     }
 
     // 3. FALLBACK TO ZHIPU AI (if Gemini and DeepSeek failed)
-    if (!deepseekSuccess && !geminiSuccess) {
+    if (!deepseekSuccess && !nvidiaSuccess && !geminiSuccess) {
         try {
             const zhipuKey = process.env.ZHIPU_API_KEY || process.env.GEMINI_API_KEY || API_KEY;
             const OpenAI = require('openai');

@@ -773,7 +773,7 @@
                         </label>
                         <div class="model-selector-wrapper">
                             <button type="button" id="model-selector-btn" class="model-selector-btn" title="Select AI Model">
-                                <span id="current-model-name">Gemini 2.0 Flash (Fastest)</span>
+                                <span id="current-model-name">GPT-OSS 120B (Default)</span>
                                 <i class="fa-solid fa-chevron-down" style="font-size: 0.65rem; opacity: 0.8;"></i>
                             </button>
                             <div id="model-dropdown-menu" class="model-dropdown-menu hidden">
@@ -782,7 +782,15 @@
                                     <div class="model-opt-title"><i class="fa-solid fa-wand-magic-sparkles"></i> Auto (Server Select)</div>
                                     <div class="model-opt-desc">Auto-routes DeepSeek for coding & Gemini for general</div>
                                 </div>
-                                <div class="model-category-header">🤖 DeepSeek AI</div>
+                                <div class="model-category-header">🤖 DeepSeek AI / NVIDIA NIM</div>
+                                <div class="model-option" data-model="deepseek-v4-pro">
+                                    <div class="model-opt-title"><i class="fa-solid fa-star"></i> DeepSeek V4 Pro</div>
+                                    <div class="model-opt-desc">Next-gen flagship DeepSeek reasoning model</div>
+                                </div>
+                                <div class="model-option" data-model="deepseek-v4-flash">
+                                    <div class="model-opt-title"><i class="fa-solid fa-bolt"></i> DeepSeek V4 Flash</div>
+                                    <div class="model-opt-desc">Ultra-fast DeepSeek V4 architecture</div>
+                                </div>
                                 <div class="model-option" data-model="deepseek-reasoner">
                                     <div class="model-opt-title"><i class="fa-solid fa-code"></i> DeepSeek-R1 (Reasoner)</div>
                                     <div class="model-opt-desc">Flagship advanced reasoning & coding specialist</div>
@@ -816,15 +824,19 @@
                                     <div class="model-opt-title"><i class="fa-solid fa-gauge-simple-high"></i> Gemini 2.5 Flash</div>
                                     <div class="model-opt-desc">Balanced speed and intelligence</div>
                                 </div>
-                                <div class="model-option active" data-model="gemini-2.0-flash">
+                                <div class="model-option" data-model="gemini-2.0-flash">
                                     <div class="model-opt-title"><i class="fa-solid fa-wind"></i> Gemini 2.0 Flash (Fastest)</div>
-                                    <div class="model-opt-desc">Ultra-fast generation & lowest latency (Default)</div>
+                                    <div class="model-opt-desc">Ultra-fast generation & lowest latency</div>
                                 </div>
                                 <div class="model-option" data-model="gemini-flash-latest">
                                     <div class="model-opt-title"><i class="fa-solid fa-check-double"></i> Gemini 1.5 Flash (Free Tier)</div>
                                     <div class="model-opt-desc">Reliable high-speed model with generous quota</div>
                                 </div>
-                                <div class="model-category-header">🧠 Zhipu AI (GLM-4)</div>
+                                <div class="model-category-header">🧠 Zhipu AI / NVIDIA NIM (GLM)</div>
+                                <div class="model-option" data-model="glm-5.2">
+                                    <div class="model-opt-title"><i class="fa-solid fa-wand-magic-sparkles"></i> GLM-5.2</div>
+                                    <div class="model-opt-desc">Next-gen flagship model via NVIDIA NIM</div>
+                                </div>
                                 <div class="model-option" data-model="glm-4-plus">
                                     <div class="model-opt-title"><i class="fa-solid fa-crown"></i> GLM-4 Plus</div>
                                     <div class="model-opt-desc">Zhipu AI flagship intelligence model</div>
@@ -844,6 +856,15 @@
                                 <div class="model-option" data-model="glm-4-flash">
                                     <div class="model-opt-title"><i class="fa-solid fa-gauge-high"></i> GLM-4 Flash</div>
                                     <div class="model-opt-desc">Free & ultra-fast fallback model</div>
+                                </div>
+                                <div class="model-category-header">🟢 OpenAI / Open Models (NVIDIA NIM)</div>
+                                <div class="model-option active" data-model="gpt-oss-120b">
+                                    <div class="model-opt-title"><i class="fa-solid fa-brain"></i> GPT-OSS 120B</div>
+                                    <div class="model-opt-desc">Massive 120B open-weights model via NIM (Default)</div>
+                                </div>
+                                <div class="model-option" data-model="gpt-oss-20b">
+                                    <div class="model-opt-title"><i class="fa-solid fa-microchip"></i> GPT-OSS 20B</div>
+                                    <div class="model-opt-desc">Fast 20B open-weights model via NIM</div>
                                 </div>
                             </div>
                         </div>

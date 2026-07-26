@@ -951,7 +951,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const currentModelName = document.getElementById('current-model-name');
         const modelOptions = document.querySelectorAll('.model-option');
 
-        window.selectedAiModel = 'gemini-2.0-flash';
+        window.selectedAiModel = 'gpt-oss-120b';
 
         if (modelSelectorBtn && modelDropdownMenu) {
             modelSelectorBtn.addEventListener('click', (e) => {
@@ -969,16 +969,21 @@ document.addEventListener('DOMContentLoaded', () => {
                     option.classList.add('active');
 
                     let displayName = 'Auto (Server Select)';
-                    if (model === 'deepseek-reasoner') displayName = 'DeepSeek-R1 (Reasoner)';
+                    if (model === 'deepseek-v4-pro') displayName = 'DeepSeek V4 Pro';
+                    else if (model === 'deepseek-v4-flash') displayName = 'DeepSeek V4 Flash';
+                    else if (model === 'deepseek-reasoner') displayName = 'DeepSeek-R1 (Reasoner)';
                     else if (model === 'deepseek-chat') displayName = 'DeepSeek-V3 (Chat)';
                     else if (model === 'deepseek-coder') displayName = 'DeepSeek Coder';
+                    else if (model === 'gpt-oss-120b') displayName = 'GPT-OSS 120B (Default)';
+                    else if (model === 'gpt-oss-20b') displayName = 'GPT-OSS 20B';
                     else if (model === 'gemini-3.1-pro') displayName = 'Gemini 3.1 Pro (High)';
                     else if (model === 'gemini-3.5-flash') displayName = 'Gemini 3.5 Flash';
                     else if (model === 'gemini-3.6-flash') displayName = 'Gemini 3.6 Flash';
                     else if (model === 'gemini-2.5-pro') displayName = 'Gemini 2.5 Pro';
                     else if (model === 'gemini-2.5-flash') displayName = 'Gemini 2.5 Flash';
-                    else if (model === 'gemini-2.0-flash') displayName = 'Gemini 2.0 Flash (Fastest)';
+                    else if (model === 'gemini-2.0-flash') displayName = 'Gemini 2.0 Flash';
                     else if (model === 'gemini-flash-latest') displayName = 'Gemini 1.5 Flash (Free Tier)';
+                    else if (model === 'glm-5.2') displayName = 'GLM-5.2';
                     else if (model === 'glm-4-plus') displayName = 'GLM-4 Plus';
                     else if (model === 'glm-4') displayName = 'GLM-4 Pro';
                     else if (model === 'glm-4-air') displayName = 'GLM-4 Air';

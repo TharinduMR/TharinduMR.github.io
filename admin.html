@@ -337,16 +337,22 @@
                         <div class="info-row"><span class="info-row-label">Gemini 3.1 Pro</span><span class="info-row-value" id="ai-gemini-3.1-pro-preview"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">Gemini Flash Latest</span><span class="info-row-value" id="ai-gemini-flash-latest"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">Gemini Imagen 3</span><span class="info-row-value" id="ai-gemini-2.5-flash-image"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 700;"><i class="fa-solid fa-brain" style="color: #06b6d4;"></i> DeepSeek</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 700;"><i class="fa-solid fa-brain" style="color: #06b6d4;"></i> DeepSeek / NVIDIA NIM</div>
+                        <div class="info-row"><span class="info-row-label">DeepSeek V4 Pro</span><span class="info-row-value" id="ai-deepseek-v4-pro"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">DeepSeek V4 Flash</span><span class="info-row-value" id="ai-deepseek-v4-flash"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">DeepSeek-V3 Chat</span><span class="info-row-value" id="ai-deepseek-chat"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">DeepSeek-R1 Reasoner</span><span class="info-row-value" id="ai-deepseek-reasoner"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">DeepSeek Coder</span><span class="info-row-value" id="ai-deepseek-coder"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
-                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 700;"><i class="fa-solid fa-globe" style="color: #f59e0b;"></i> Zhipu AI</div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 700;"><i class="fa-solid fa-globe" style="color: #f59e0b;"></i> Zhipu AI / NVIDIA NIM</div>
+                        <div class="info-row"><span class="info-row-label">GLM-5.2 (NVIDIA)</span><span class="info-row-value" id="ai-glm-5.2"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">GLM-4 Flash</span><span class="info-row-value" id="ai-glm-4-flash"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">GLM-4 Plus</span><span class="info-row-value" id="ai-glm-4-plus"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">GLM-4 Pro</span><span class="info-row-value" id="ai-glm-4"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">GLM-4 Air</span><span class="info-row-value" id="ai-glm-4-air"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div class="info-row"><span class="info-row-label">GLM-4 Long</span><span class="info-row-value" id="ai-glm-4-long"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 700;"><i class="fa-solid fa-microchip" style="color: #10b981;"></i> NVIDIA NIM / OpenAI OSS</div>
+                        <div class="info-row"><span class="info-row-label">GPT-OSS 120B</span><span class="info-row-value" id="ai-gpt-oss-120b"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
+                        <div class="info-row"><span class="info-row-label">GPT-OSS 20B</span><span class="info-row-value" id="ai-gpt-oss-20b"><i class="fa-solid fa-circle-notch fa-spin"></i> Checking...</span></div>
                         <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin: 12px 0 6px; font-weight: 700;"><i class="fa-solid fa-server" style="color: var(--accent);"></i> Backend</div>
                         <div class="info-row"><span class="info-row-label">Node.js & Memory</span><span class="info-row-value" id="sys-status-node">—</span></div>
                     </div>
@@ -835,12 +841,14 @@
                     // Set initial "Configured" / "Not Configured" for all models
                     const allModelKeys = [
                         'gemini-2.0-flash', 'gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-3.1-pro-preview', 'gemini-flash-latest', 'gemini-2.5-flash-image',
-                        'deepseek-chat', 'deepseek-reasoner', 'deepseek-coder',
-                        'glm-4-flash', 'glm-4-plus', 'glm-4', 'glm-4-air', 'glm-4-long'
+                        'deepseek-v4-pro', 'deepseek-v4-flash', 'deepseek-chat', 'deepseek-reasoner', 'deepseek-coder',
+                        'glm-5.2', 'glm-4-flash', 'glm-4-plus', 'glm-4', 'glm-4-air', 'glm-4-long',
+                        'gpt-oss-120b', 'gpt-oss-20b'
                     ];
                     for (const key of allModelKeys) {
                         let providerCfg = null;
-                        if (key.startsWith('gemini') || key.startsWith('gemini-flash')) providerCfg = data.aiConfig.gemini;
+                        if (key.includes('v4') || key.startsWith('gpt-oss') || key === 'glm-5.2') providerCfg = data.aiConfig.nvidia || data.aiConfig.zhipu;
+                        else if (key.startsWith('gemini') || key.startsWith('gemini-flash')) providerCfg = data.aiConfig.gemini;
                         else if (key.startsWith('deepseek')) providerCfg = data.aiConfig.deepseek;
                         else if (key.startsWith('glm')) providerCfg = data.aiConfig.zhipu;
                         if (providerCfg) {
@@ -861,13 +869,14 @@
 
         async function testAIServers() {
             const btn = document.getElementById('test-ai-btn');
-            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing 14 models...'; }
+            if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Testing 19 models...'; }
 
             // Set all badges to spinning
             const allIds = [
                 'ai-gemini-2.0-flash', 'ai-gemini-3.5-flash', 'ai-gemini-3.6-flash', 'ai-gemini-3.1-pro-preview', 'ai-gemini-flash-latest', 'ai-gemini-2.5-flash-image',
                 'ai-deepseek-chat', 'ai-deepseek-reasoner', 'ai-deepseek-coder',
-                'ai-glm-4-flash', 'ai-glm-4-plus', 'ai-glm-4', 'ai-glm-4-air', 'ai-glm-4-long'
+                'ai-glm-4-flash', 'ai-glm-4-plus', 'ai-glm-4', 'ai-glm-4-air', 'ai-glm-4-long',
+                'ai-glm-5.2', 'ai-deepseek-v4-pro', 'ai-deepseek-v4-flash', 'ai-gpt-oss-120b', 'ai-gpt-oss-20b'
             ];
             allIds.forEach(id => {
                 const el = document.getElementById(id);
